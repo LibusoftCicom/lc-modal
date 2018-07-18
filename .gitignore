@@ -6,7 +6,7 @@
 /out-tsc
 /dist-app
 /dist-lib
-
+package-lock.json
 # dependencies
 /node_modules
 
