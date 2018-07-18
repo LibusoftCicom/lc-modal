@@ -1,10 +1,11 @@
 {
 	"name": "@libusoftcicom/lc-modal",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "LC Modal - Angular modal component.",
 	"homepage": "https://github.com/LibusoftCicom/lc-modal",
 	"bugs": "https://github.com/LibusoftCicom/lc-modal/issues",
 	"license": "MIT",
+	"readmeFilename": "README.md",
 	"keywords": [
 		"modal",
 		"dialog",
@@ -21,10 +22,11 @@
 		"test": "ng test lc-modal-lib ",
 		"lint": "ng lint lc-modal-lib ",
 		"e2e": "ng e2e",
-		"build:lib": "rimraf dist-lib && ng build lc-modal-lib  --prod",
+		"copyReadme": "copy README.md .\\dist-lib\\ && copy LICENSE .\\dist-lib\\",
+		"build:lib": "rimraf dist-lib &&  ng build lc-modal-lib  --prod && npm run copyReadme",
 		"build:app": "rimraf docs && ng build lc-modal-app  --prod",
-		"build:publish:local": "npm publish dist-lib/ --access public --registry http://localhost:4873",
-		"build:publish:public": "npm publish dist-lib/ --access public"
+		"build:publish:local": "npm run build:lib && npm publish dist-lib/ --access public --registry http://localhost:4873",
+		"build:publish:public": "npm run build:lib && npm publish dist-lib/ --access public"
 	},
 	"private": true,
 	"dependencies": {
