@@ -1,6 +1,19 @@
 {
 	"name": "@libusoftcicom/lc-modal",
-	"version": "0.0.0",
+	"version": "1.0.0",
+	"description": "LC Modal - Angular modal component.",
+	"homepage": "https://github.com/LibusoftCicom/lc-modal",
+	"bugs": "https://github.com/LibusoftCicom/lc-modal/issues",
+	"license": "MIT",
+	"keywords": [
+		"modal",
+		"dialog",
+		"angular",
+		"angular 2",
+		"angular 4",
+		"angular 5",
+		"angular 6"
+	],
 	"scripts": {
 		"ng": "ng",
 		"start": "ng serve",
