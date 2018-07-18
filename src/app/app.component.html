@@ -1,0 +1,283 @@
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+  <img class="logo" src="./assets/logo.png">
+  <a class="navbar-brand" href="#">LC Modal</a>
+</nav>
+
+<main role="main">
+
+  <!-- Main jumbotron for a primary marketing message or call to action -->
+  <div class="jumbotron">
+    <div class="container">
+      <h1 class="display-3">LC Modal</h1>
+      <p>Angular modal component</p>
+      <p>
+        <a class="btn btn-primary btn-lg" href="https://github.com/LibusoftCicom/lc-modal" role="button">Github &raquo;</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Example row of columns -->
+    <div class="card text-center">
+      <div class="card-header">
+        Modal example
+      </div>
+      <div class="card-body">
+
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <button type="button" (click)="example()" class="btn btn-primary">
+              Example modal</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="fullScreenModal()" class="btn btn-primary">Fullscreen modal</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="openFormModal()" class="btn btn-primary">Modal with form</button>
+          </li>
+        </ul>
+
+      </div>
+      <div class="card-footer text-muted">
+        <h5 class="card-title"> Modal result</h5>
+        <p>Modal status: {{status}}</p>
+        <p>Modal data: {{result | json}}</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Description</h5>
+        <div class="card-body">
+          <h6 class="card-title">Angular modal component</h6>
+          <div class="card-text">
+            <ul class="list-unstyled">
+              <li>
+                - LcModal component is an Angular component for displaying custom content in modal
+              </li>
+              <li>
+                - Compatible with Angular 2+ up to Angular v6.0.0
+              </li>
+              <li>
+                - Only dependency is Font Awesome
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Getting Started</h5>
+        <div class="card-body">
+          <h6 class="card-title"></h6>
+          <div class="card-text">
+            <ul class="list-unstyled">
+              <li>
+                1. Fork and clone this repo
+              </li>
+              <li>
+                2. npm install
+              </li>
+              <li>
+                3. Open a terminal and type "npm run start"
+              </li>
+              <li>
+                4. Open "http://localhost:4200" in browser
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <hr>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Installation</h5>
+        <div class="card-body">
+          <h6 class="card-title">To install this component to an external project, follow the procedure:</h6>
+          <div class="card-text">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">
+                <p>1. Install lc-modal package from npm:</p>
+                <code>npm install @libusoftcicom/lc-modal</code>
+              </li>
+              <li class="list-group-item">
+                <p>
+                  2. Register ModalModule in NgModule with components that are opened in modal:</p>
+                <pre><code>
+   import &#123; ModalModule &#125; from '@libusoftcicom/lc-modal';
+   import &#123; ModalComponentExample &#125; from '...'; // component used in modal
+
+    @NgModule(
+      &#123;
+        declarations: [...],
+        imports: [
+          ModalModule.withComponents([ModalComponentExample]),
+          ...
+        ],
+        providers: [...],
+        bootstrap: [...]
+        &#125;)
+    export class AppModule &#123;&#125;
+
+              </code></pre>
+              </li>
+              <li class="list-group-item">
+                <p>3. Add modal anchor component</p>
+                <code>&lt;dialog-anchor&gt;&lt;/dialog-anchor&gt;</code>
+              </li>
+              <li class="list-group-item">
+                <p>4. Open modal</p>
+                <pre><code>
+    let modalResult = await this.modal
+      .title('Example modal')
+      .component(ModalComponentExample)
+      .setHeight(370)
+      .setWidth(700)
+      .draggable(true)
+      .showMaximize(true)
+      .open();
+              </code>
+              </pre>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row card border-light">
+      <div class="card-header">
+        <b>
+          Config options
+        </b>
+      </div>
+      <div class="row ">
+        <div class="card-body col-sm-6">
+
+          <pre><code>
+this.modal
+  .title('Example modal')
+  .setHeight(370)
+  .setWidth(700)
+  .additionalParams(  &#123; &#125; || [] || String || Number || Boolean)
+  .draggable(false)
+  .resizable(true)
+  .closeOnClick()
+  .offsetLeft( 200 )
+  .offsetTop( 200 )
+  .closeOnError()
+  .preClose(() => Promise.resolve() )
+  .showClose( true/false )
+  .confirm( &#123; data &#125; )
+  .cancel()
+  .setClass('test-class')
+  .removeClass('test-class')
+  .component(ModalComponentExample)
+  .draggable(true)
+  .showMaximize(true)
+  .open();
+        </code>
+              </pre>
+        </div>
+        <div class="card-body col-sm-6">
+          <dl class="row">
+            <dt class="col-sm-3">title</dt>
+            <dd class="col-sm-9">Set modal title.</dd>
+
+            <dt class="col-sm-3">setHeight</dt>
+            <dd class="col-sm-9">Set modal height.</dd>
+
+            <dt class="col-sm-3">setWidth</dt>
+            <dd class="col-sm-9">Set modal width.</dd>
+
+            <dt class="col-sm-3 ">draggable</dt>
+            <dd class="col-sm-9">Enable/disable changing modal position.</dd>
+            <dt class="col-sm-3 ">
+              resizable</dt>
+            <dd class="col-sm-9">Enable/disable changing modal size.</dd>
+            <dt class="col-sm-3 ">
+              closeOnClick</dt>
+            <dd class="col-sm-9">Enable/disable closing modal on background click.</dd>
+            <dt class="col-sm-3 ">
+              offsetLeft</dt>
+            <dd class="col-sm-9">Set modal position from left side of browser window.</dd>
+            <dt class="col-sm-3 ">
+              offsetTop</dt>
+            <dd class="col-sm-9">Set modal position from top of browser window.</dd>
+            <dt class="col-sm-3 ">
+              closeOnError</dt>
+            <dd class="col-sm-9">Enable/disable closing modal on error.</dd>
+
+
+            <dt class="col-sm-3 ">
+              preClose</dt>
+            <dd class="col-sm-9">Set function that is executed before closing modal.</dd>
+            <dt class="col-sm-3 ">
+              showClose</dt>
+            <dd class="col-sm-9">Show/hide modal close button.</dd>
+            <dt class="col-sm-3 ">
+              confirm</dt>
+            <dd class="col-sm-9">Close modal with confirmation.</dd>
+            <dt class="col-sm-3 ">
+              cancel</dt>
+            <dd class="col-sm-9">Close modal without confirmation.</dd>
+            <dt class="col-sm-3 ">
+              setClass</dt>
+            <dd class="col-sm-9">Set custom css class on modal.</dd>
+            <dt class="col-sm-3 ">
+              removeClass</dt>
+            <dd class="col-sm-9">Remove custom css class on modal.</dd>
+
+            <dt class="col-sm-3 ">
+              component</dt>
+            <dd class="col-sm-9">Set modal component.</dd>
+            <dt class="col-sm-3 ">
+              draggable</dt>
+            <dd class="col-sm-9">Enable/disable modal dragging.</dd>
+            <dt class="col-sm-3 ">
+              showMaximize</dt>
+            <dd class="col-sm-9">Show/hide modal maximize button.</dd>
+            <dt class="col-sm-3 ">
+              open</dt>
+            <dd class="col-sm-9">Open modal.</dd>
+
+          </dl>
+        </div>
+      </div>
+    </div>
+
+
+    <hr>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Contributing</h5>
+        <div class="card-body">
+          <h6 class="card-title"></h6>
+          <div class="card-text">
+            <p>
+              Want to file a bug, contribute some code, or improve documentation? Excellent! Read up on our
+              <a href="https://github.com/LibusoftCicom/lc-modal/blob/master/CONTRIBUTING.md">contributing guide</a> and
+              <a href="https://github.com/LibusoftCicom/lc-modal/blob/master/CODE_OF_CONDUCT.md">code of conduct</a> and then check out one of our
+              <a href="https://github.com/LibusoftCicom/lc-modal/issues">issues</a>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /container -->
+
+</main>
+<dialog-anchor>
+
+</dialog-anchor>
+<footer class="container">
+  <p>&copy; Libusoft Cicom 2018</p>
+</footer>

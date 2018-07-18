@@ -1,0 +1,116 @@
+.resizable-handle {
+  position: absolute;
+  font-size: 0.1px;
+  -ms-touch-action: none;
+  touch-action: none;
+  z-index: 1000;
+}
+
+.resizable-right {
+  cursor: e-resize;
+  width: 7px;
+  right: -5px;
+  top: 0;
+  height: 100%;
+}
+
+.resizable-bottom {
+  cursor: s-resize;
+  height: 7px;
+  width: 100%;
+  bottom: -3px;
+  left: 0;
+}
+
+.resizable-corner {
+  cursor: se-resize;
+  width: 16px;
+  height: 16px;
+  right: -1px;
+  bottom: -1px;
+  z-index: 1001;
+}
+
+.resizable-corner span:after,
+.resizable-corner span:before,
+.resizable-corner:after,
+.resizable-corner:before {
+  position: absolute;
+  display: block;
+  content: "\0A0";
+  border-bottom: 10px solid #adacad;
+  border-left: 10px solid transparent;
+  border-right: 0;
+  border-top: 0;
+}
+
+.resizable-corner span:after,
+.resizable-corner span:before {
+  border-bottom-color: #fff;
+}
+
+:host-context(.pdf-reader) .resizable-corner:after,
+:host-context(.pdf-reader) .resizable-corner:before,
+:host-context(.pdf-reader) .resizable-corner span:after,
+:host-context(.pdf-reader) .resizable-corner span:before {
+  display: none;
+}
+
+.resizable-corner:after {
+  right: 4px;
+  bottom: 4px;
+  border-bottom-width: 6px;
+  border-left-width: 6px;
+  z-index: 5;
+}
+
+.resizable-corner span:after {
+  right: 1px;
+  bottom: 1px;
+  z-index: 6;
+}
+
+.resizable-corner:before {
+  right: 4px;
+  bottom: 4px;
+  z-index: 3;
+}
+
+.resizable-corner span:before {
+  right: 3px;
+  bottom: 3px;
+  z-index: 4;
+}
+
+.modal-pseudo,
+.modal-box {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  right: 0;
+  min-height: 150px;
+  min-width: 580px;
+  width: 580px;
+  background: #fff;
+  margin: auto;
+  z-index: 2;
+  pointer-events: all;
+  -webkit-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+  -moz-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+  box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+}
+
+.modal-pseudo {
+  z-index: 50000;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  border: 3px dashed #d9dbdc;
+  margin: 0;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+:host(.message-box) .modal-pseudo {
+  min-width: 400px;
+}

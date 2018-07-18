@@ -1,0 +1,233 @@
+:host {
+	display: block;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 10002;
+	background: transparent;
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+:host /deep/ lc-datepicker {
+	position: fixed;
+}
+
+:host(.message-box),
+:host(.active) {
+	background: rgba(0, 0, 0, 0.4);
+}
+
+:host(.fullscreen) .modal-box {
+	top: 0 !important;
+	left: 0 !important;
+	right: 0 !important;
+	bottom: 0;
+	margin: auto !important;
+	min-width: 100% !important;
+	min-height: 100% !important;
+	max-width: 100% !important;
+	max-height: 100% !important;
+}
+
+.modal-pseudo,
+.modal-box {
+	position: absolute;
+	top: 40%;
+	left: 0;
+	right: 0;
+	min-height: 150px;
+	min-width: 580px;
+	width: 580px;
+	background: #fff;
+	margin: auto;
+	z-index: 2;
+	pointer-events: all;
+	-webkit-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+	-moz-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+	box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+}
+
+.modal-pseudo {
+	z-index: 50000;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	border: 3px dashed #d9dbdc;
+	margin: 0;
+	min-width: 0;
+	background: rgba(255, 255, 255, 0.3);
+}
+
+:host(.message-box) .modal-pseudo {
+	min-width: 400px;
+}
+
+:host(.message-box) .modal-box {
+	display: block;
+	width: 400px;
+	min-width: 400px;
+	min-width: initial;
+	min-height: 160px;
+	background: #fff;
+	z-index: 40000;
+	top: 50%;
+	left: 50%;
+	bottom: auto;
+	overflow: hidden;
+	right: auto;
+	margin: -150px 0 0 -200px;
+	height: auto;
+}
+
+:host(.message-box) .modal-header,
+:host(.message-box) .modal-body {
+	text-align: center;
+}
+
+:host(.message-box) .modal-body,
+:host(.message-box) .modal-content {
+	padding: 0;
+}
+
+:host(.message-box) .close-btn {
+	color: #858f98;
+}
+
+.modal-header {
+	background: #5e666f;
+	color: #fff;
+	height: 28px;
+	padding: 0 10px;
+	line-height: 28px;
+	font-size: 14px;
+	position: absolute;
+	z-index: 10;
+	top: 0;
+	left: 0;
+	width: 100%;
+	border-radius: 0px;
+}
+
+/* .modal-header[draggable-handle] {
+    cursor: -webkit-grab;
+    cursor: -moz-grab;
+    cursor: grab;
+} */
+
+:host-context(.dark) .modal-header {
+	background: #2b3135;
+}
+
+:host-context(.light) .modal-header {
+	background: #374c6b;
+}
+
+:host-context(.purple) .modal-header {
+	background: #4527a0;
+}
+
+:host-context(.indigo) .modal-header {
+	background: #283593;
+}
+
+:host-context(.teal) .modal-header {
+	background: #00695c;
+}
+
+:host-context(.gray) .modal-header {
+	background: #424242;
+}
+
+.modal-body {
+	position: relative;
+	padding: 26px 0 0;
+	height: 100%;
+}
+
+.modal-content {
+	background: white;
+	position: relative;
+	height: 100%;
+	padding: 10px;
+	// overflow: auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+.modal-header-btn {
+	position: absolute;
+	cursor: pointer;
+	z-index: 100;
+	color: #fff;
+	height: 26px;
+	width: 26px;
+	text-align: center;
+	line-height: 26px;
+	font-weight: 700;
+}
+
+.close-btn {
+	top: 0;
+	right: 0;
+	font-size: 24px;
+}
+
+.close-btn:after {
+	font-family: 'Helvetica', Arial, sans-serif;
+	content: '\0D7';
+	cursor: pointer;
+}
+
+.maximize-btn {
+	top: 0;
+	right: 26px;
+}
+
+@media handheld, screen and (max-width: 600px) {
+	.modal-header[draggable-handle] {
+		cursor: default;
+	}
+
+	.modal-box {
+		top: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		bottom: 0;
+		margin: auto !important;
+		min-width: 96% !important;
+		min-width: initial;
+		max-width: 100% !important;
+		max-height: 100% !important;
+	}
+
+	:host(.message-box) .modal-box {
+		top: 50% !important;
+		left: 50% !important;
+		right: auto !important;
+		bottom: auto !important;
+		min-height: auto !important;
+		-webkit-transform: translate(-50%, -50%);
+		-moz-transform: translate(-50%, -50%);
+		-o-transform: translate(-50%, -50%);
+		-ms-transform: translate(-50%, -50%);
+		transform: translate(-50%, -50%);
+	}
+}
+/*
+@media handheld, screen and ( orientation:portrait ) {
+    .modal-box {
+        bottom: auto;
+    }
+} */
+
+:host /deep/ .calendarContainer {
+	position: fixed !important;
+}

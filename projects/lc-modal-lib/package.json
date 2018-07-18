@@ -1,0 +1,9 @@
+{
+	"name": "@libusoftcicom/lc-modal",
+	"version": "1.0.0",
+	"peerDependencies": {
+		"@angular/common": "6.0.2",
+		"@angular/core": "6.0.2",
+		"font-awesome": "4.7.0"
+	}
+}
