@@ -15,6 +15,10 @@
 # Description
 
 - LcModal component is an Angular component for displaying custom content in modal
+- Show any Angular component in modal
+- Supports multiple modals and modals inside of a modals
+- Has maximize/restore
+- Resizable and draggable
 - Compatible with Angular 2+ up to Angular v6.0.0
 - Only dependency is Font Awesome
 
