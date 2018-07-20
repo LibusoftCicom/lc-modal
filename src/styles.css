@@ -1,12 +1,17 @@
 /* You can add global styles to this file, and also import other style files */
- /* --------------------------------------------------
+/* --------------------------------------------------
     My reset elements
  -------------------------------------------------- */
 
- * {
-   padding: 0;
-   margin: 0;
-   -webkit-box-sizing: border-box;
-   -moz-box-sizing: border-box;
-   box-sizing: border-box;
- }
+* {
+	padding: 0;
+	margin: 0;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+.maximize-btn {
+	font-size: 15px !important;
+	font-weight: 100 !important;
+	line-height: 28px !important;
+}
