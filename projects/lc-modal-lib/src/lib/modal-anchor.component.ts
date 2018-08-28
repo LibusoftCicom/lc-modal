@@ -66,12 +66,14 @@ export class ModalAnchor implements OnInit, OnDestroy {
       this.renderer.setStyle(this.body, 'left', 0);
       this.renderer.setStyle(this.body, 'right', 0);
       this.renderer.setStyle(this.body, 'top', `-${this.scrollPosition}px`);
+      // this.renderer.setStyle(this.body, 'overscrollBehavior', 'none');
     } else {
       this.renderer.removeStyle(this.body, 'overflow');
       this.renderer.removeStyle(this.body, 'position');
       this.renderer.removeStyle(this.body, 'left');
       this.renderer.removeStyle(this.body, 'right');
       this.renderer.removeStyle(this.body, 'top');
+      // this.renderer.removeStyle(this.body, 'overscrollBehavior');
       this.view.scrollTo(0, this.scrollPosition);
       this.scrollPosition = null;
     }

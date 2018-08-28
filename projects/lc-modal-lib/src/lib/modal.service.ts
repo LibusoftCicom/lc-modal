@@ -1,5 +1,5 @@
 import { Injectable, ComponentFactoryResolver, Injector, ViewContainerRef } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ModalFactory } from './modal-factory.class';
 import { IModal } from './modal-types.class';
 import { ModalViewModel } from './modal-view-model.class';
@@ -10,10 +10,6 @@ const viewModel = new ModalViewModel();
 @Injectable()
 export class Modal implements IModal<ModalFactory> {
 	private model: ModalViewModel = viewModel;
-
-	private _closeChanges: Subject<any> = new Subject();
-
-	private _openChanges: Subject<any> = new Subject();
 
 	constructor(
 		private cfr: ComponentFactoryResolver,
@@ -57,7 +53,7 @@ export class Modal implements IModal<ModalFactory> {
 		);
 
 		// set after view ready
-		modal.afterViewInit(() => this._openChanges.next());
+		modal.afterViewInit(() => this.model.openChanges.next());
 
 		// set reference to previous element so we don't
 		// need filter array later to find previous element
@@ -67,7 +63,7 @@ export class Modal implements IModal<ModalFactory> {
 
 		modal.setDestroyFn(() => {
 			this.model.remove(modal);
-			this._closeChanges.next();
+			this.model.closeChanges.next();
 		});
 
 		return modal;
@@ -77,14 +73,14 @@ export class Modal implements IModal<ModalFactory> {
 	 * track modal closing changes
 	 */
 	public get closeChange() {
-		return this._closeChanges.asObservable();
+		return this.model.closeChanges.asObservable();
 	}
 
 	/**
 	 * track modal opening changes
 	 */
 	public get openChange() {
-		return this._openChanges.asObservable();
+		return this.model.openChanges.asObservable();
 	}
 
 	/**
