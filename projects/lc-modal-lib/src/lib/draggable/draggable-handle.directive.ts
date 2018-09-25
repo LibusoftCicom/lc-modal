@@ -97,7 +97,6 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
   @HostListener('touchstart', ['$event'])
   @HostListener('mousedown', ['$event'])
   public onMouseDown(event: MouseEvent): void {
-    event.stopPropagation();
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
