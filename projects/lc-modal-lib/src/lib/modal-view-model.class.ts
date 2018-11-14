@@ -1,11 +1,14 @@
 import { ViewContainerRef } from '@angular/core';
 import { ModalFactory } from './modal-factory.class';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 export class ModalViewModel {
 	public _viewContainerRef: ViewContainerRef;
 	private _modals: ModalFactory[] = [];
 	public counter = 0;
+
+	public readonly closeChanges: Subject<any> = new Subject();
+	public readonly openChanges: Subject<any> = new Subject();
 
 	public get viewContainerRef() {
 		return this._viewContainerRef;

@@ -97,7 +97,6 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
   @HostListener('touchstart', ['$event'])
   @HostListener('mousedown', ['$event'])
   public onMouseDown(event: MouseEvent): void {
-    event.stopPropagation();
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
@@ -149,7 +148,6 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
     // prati poziciju i pomići toliko pseudo element
     if (this.mouseDown) {
       this.dragging = true;
-
       this.parent.setClass();
 
       this.calcNewPosition(event);
