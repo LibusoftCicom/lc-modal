@@ -532,9 +532,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 		const childComponent = this._componentInstanceRef.instance;
 		const preCloseFnRef = childComponent.preClose || function() {};
 
-		const closeFn = () => {
+		const closeFn = error => {
 			// notify observer about error in pre closing phase
-			this._closingStatus.error(null);
+			this._closingStatus.error(error);
 
 			// execute only if we want to close it on error
 			if (this._closeOnError) {
