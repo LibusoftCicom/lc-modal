@@ -569,8 +569,16 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		const action: 'focus' | 'select' = ['INPUT'].includes(element.tagName) ? 'select' : 'focus';
 		// Calling element.select() will not necessarily focus the input,
 		// so call focus before
-		this.invokeElementMethod(element, 'focus');
-		this.invokeElementMethod(element, action);
+		try {
+			this.invokeElementMethod(element, 'focus');
+			this.invokeElementMethod(element, action);
+		} catch(e) {
+			/**
+			 * we don't catch Error
+			 * because in this moment element which we try
+			 * to focus may be hidden -> IE fix -> to prevent page break
+			 */
+		}
 	}
 
 	private getFocusableElements(element: HTMLElement): Element[] {
