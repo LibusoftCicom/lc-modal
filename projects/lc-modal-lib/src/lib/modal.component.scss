@@ -4,7 +4,7 @@
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 100%;
+	height: 100vh;
 	z-index: 10002;
 	background: transparent;
 	-webkit-touch-callout: none; /* iOS Safari */
@@ -114,6 +114,7 @@
 	left: 0;
 	width: 100%;
 	border-radius: 0px;
+	padding-right: 60px;
 }
 
 /* .modal-header[draggable-handle] {
@@ -121,6 +122,14 @@
     cursor: -moz-grab;
     cursor: grab;
 } */
+
+.modal-title {
+	display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+	white-space: nowrap;
+	line-height: 1.6rem;
+}
 
 :host-context(.dark) .modal-header {
 	background: #2b3135;

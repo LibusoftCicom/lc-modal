@@ -24,11 +24,11 @@ import { ModalConfig } from './modal-config.class';
       <div *ngIf="_showClose" class="modal-header-btn close-btn" (click)="_closeFn()"></div>
       <div *ngIf="!!title && isDraggable" class="modal-header"
         (dblclick)="toggleMaximize()" draggable-handle>
-          <span>{{ title }}</span>
+          <span class="modal-title">{{ title }}</span>
       </div>
       <div *ngIf="!!title && !isDraggable" class="modal-header"
         (dblclick)="toggleMaximize()">
-          <span>{{ title }}</span>
+          <span class="modal-title">{{ title }}</span>
       </div>
       <div class="modal-body">
           <div class="modal-content">
