@@ -1,6 +1,6 @@
 :host {
 	display: block;
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -125,8 +125,8 @@
 
 .modal-title {
 	display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	white-space: nowrap;
 	line-height: 1.6rem;
 }
