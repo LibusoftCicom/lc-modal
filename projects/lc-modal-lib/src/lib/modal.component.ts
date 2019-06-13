@@ -506,7 +506,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	private handleTabKey(event: KeyboardEvent, backward: boolean): void {
 		const el = this.hostElementRef.nativeElement;
 
-		const focusableElements = this.getFocusableElements(el);
+		const focusableElements = this.filterAllowed(el);
 		if (focusableElements.length === 0) {
 			if (document.activeElement) {
 				this.invokeElementMethod(document.activeElement, 'blur');
@@ -572,7 +572,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		try {
 			this.invokeElementMethod(element, 'focus');
 			this.invokeElementMethod(element, action);
-		} catch(e) {
+		} catch (e) {
 			/**
 			 * we don't catch Error
 			 * because in this moment element which we try
@@ -624,9 +624,8 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		const focusableElements = this.getFocusableElements(el);
 
 		if (focusableElements.length > 0) {
-			const focusElement = focusableElements[0];
 			// filter ignore elements
-			// to prevent focusing toolbar buttons
+			// to prevent focusing unavailable element
 			const ignoreElements = Array.from((<HTMLElement>el).querySelectorAll(this.config.IgnoreFocusSelectors));
 
 			if (ignoreElements.length > 0) {
