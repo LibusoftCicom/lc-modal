@@ -16,7 +16,7 @@
 								  supported by Chrome and Opera */
 }
 
-:host /deep/ lc-datepicker {
+:host ::ng-deep lc-datepicker {
 	position: fixed;
 }
 
@@ -240,6 +240,6 @@
     }
 } */
 
-:host /deep/ .calendarContainer {
+:host ::ng-deep .calendarContainer {
 	position: fixed !important;
 }

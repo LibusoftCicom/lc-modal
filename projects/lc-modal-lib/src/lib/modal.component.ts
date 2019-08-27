@@ -17,34 +17,35 @@ import { ModalConfig } from './modal-config.class';
 @Component({
 	selector: `modal-component`,
 	template: `
-  <div class="modal-box" #modalBox draggable>
-      <div *ngIf="_showMaximize" class="fa modal-header-btn maximize-btn"
-        [ngClass]="{'fa-window-maximize' : !maximized, 'fa-window-restore' : maximized }"
-        (click)="_maximizeRestore()"></div>
-      <div *ngIf="_showClose" class="modal-header-btn close-btn" (click)="_closeFn()"></div>
-      <div *ngIf="!!title && isDraggable" class="modal-header"
-        (dblclick)="toggleMaximize()" draggable-handle>
-          <span class="modal-title">{{ title }}</span>
-      </div>
-      <div *ngIf="!!title && !isDraggable" class="modal-header"
-        (dblclick)="toggleMaximize()">
-          <span class="modal-title">{{ title }}</span>
-      </div>
-      <div class="modal-body">
-          <div class="modal-content">
-              <ng-template #content></ng-template>
-          </div>
-      </div>
-      <resizable *ngIf="isResizable"></resizable>
-  </div>
-    `,
+		<div class="modal-box" #modalBox draggable>
+			<div
+				*ngIf="_showMaximize"
+				class="fa modal-header-btn maximize-btn"
+				[ngClass]="{ 'fa-window-maximize': !maximized, 'fa-window-restore': maximized }"
+				(click)="_maximizeRestore()"
+			></div>
+			<div *ngIf="_showClose" class="modal-header-btn close-btn" (click)="_closeFn()"></div>
+			<div *ngIf="!!title && isDraggable" class="modal-header" (dblclick)="toggleMaximize()" draggable-handle>
+				<span class="modal-title">{{ title }}</span>
+			</div>
+			<div *ngIf="!!title && !isDraggable" class="modal-header" (dblclick)="toggleMaximize()">
+				<span class="modal-title">{{ title }}</span>
+			</div>
+			<div class="modal-body">
+				<div class="modal-content">
+					<ng-template #content></ng-template>
+				</div>
+			</div>
+			<resizable *ngIf="isResizable"></resizable>
+		</div>
+	`,
 	styleUrls: ['./modal.component.scss']
 })
 export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
-	@ViewChild('content', { read: ViewContainerRef })
+	@ViewChild('content', { static: true, read: ViewContainerRef })
 	private contentRef: ViewContainerRef;
 
-	@ViewChild('modalBox') private modalBox: ElementRef;
+	@ViewChild('modalBox', { static: true }) private modalBox: ElementRef;
 
 	public title: string;
 
@@ -80,11 +81,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	private _initMinWidth;
 
-	constructor(
-		vcRef: ViewContainerRef,
-		private renderer: Renderer2,
-		private config: ModalConfig
-	) {
+	constructor(vcRef: ViewContainerRef, private renderer: Renderer2, private config: ModalConfig) {
 		this.hostElementRef = vcRef.element;
 	}
 

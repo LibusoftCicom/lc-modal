@@ -19,7 +19,7 @@
 - Supports multiple modals and modals inside of a modals
 - Has maximize/restore
 - Resizable and draggable
-- Compatible with Angular 2+ up to Angular v6.0.0
+- Compatible with Angular 2+ up to Angular v8.0.0
 - Only dependency is Font Awesome
 
 # Tested with
