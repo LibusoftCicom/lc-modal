@@ -1,20 +1,13 @@
 language: node_js
 node_js:
-  - 'node'
-
+  - '9'
+dist: trusty
+sudo: required
 branches:
   only:
     - master
-
-services:
-  - xvfb
-
-before_install:
-  - export CHROME_BIN=chromium-browser
-  - export DISPLAY=:99.0
-
 before_script:
-  - npm install -g @angular/cli@8.1.1
+  - npm npm install -g @angular/cli@8.1.1
 
 install:
   - npm install
