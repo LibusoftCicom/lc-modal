@@ -1,6 +1,6 @@
 {
 	"name": "@libusoftcicom/lc-modal",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"description": "LC Modal - Angular modal component.",
 	"homepage": "https://github.com/LibusoftCicom/lc-modal",
 	"bugs": "https://github.com/LibusoftCicom/lc-modal/issues",
@@ -13,7 +13,9 @@
 		"angular 2",
 		"angular 4",
 		"angular 5",
-		"angular 6"
+		"angular 6",
+		"angular 7",
+		"angular 8"
 	],
 	"peerDependencies": {
 		"@angular/common": "~8.1.1",

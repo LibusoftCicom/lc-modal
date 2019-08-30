@@ -83,7 +83,7 @@ let modalResult = await this.modal
 
 ### Setting up Dev
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.2.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.3.
 
 [Angular CLI](https://github.com/angular/angular-cli) must be installed before building LC Modal component.
 
@@ -102,7 +102,7 @@ Open "http://localhost:4200" in browser
 
 ### Building
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.3.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.3.
 
 [Angular CLI](https://github.com/angular/angular-cli) must be installed before building LC Modal component.
 
@@ -123,7 +123,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Tests
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.3.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.1.3.
 
 [Angular CLI](https://github.com/angular/angular-cli) must be installed before building LC modal component.
 
