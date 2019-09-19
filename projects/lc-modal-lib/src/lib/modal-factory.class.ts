@@ -597,7 +597,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 				if (isPromise(result)) {
 					from(result).subscribe((r) => observable.next(r));
 				} else if (isObservable(result)) {
-					result.subscribe((r) => observable.next(r));
+					result.subscribe(observable, () => {});
 				} else {
 					observable.next(result as boolean);
 				}

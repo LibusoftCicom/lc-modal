@@ -16,6 +16,7 @@ import {
 } from '@angular/core/testing';
 
 import { ModalModule, IModalResult, Modal } from './modal.module';
+import { of } from 'rxjs';
 
 const preCloseSpyFunctions = jasmine.createSpy('preCloseSpyFunctions');
 
@@ -187,9 +188,30 @@ describe('ModalComponentHost', () => {
 				.component(ModalChildComponent)
 				.preClose(({ modalResult }) => {
 					SpyFunctions.preClose(modalResult);
-					return true;
 				})
 				.open();
+
+			(<Modal>component.modal).active().cancel();
+
+			fixture.detectChanges();
+			tick(150);
+
+			expect(SpyFunctions.preClose).toHaveBeenCalledWith(IModalResult.Cancel);
+		})
+	);
+
+	it(
+		'should call preClose with observable return',
+		fakeAsync(() => {
+			modalService
+				.component(ModalChildComponent)
+				.preClose(() => {
+					return of(true);
+				})
+				.open()
+				.then(({ modalResult }) => {
+					SpyFunctions.preClose(modalResult);
+				});
 
 			(<Modal>component.modal).active().cancel();
 
