@@ -1,6 +1,6 @@
 import { ComponentFactoryResolver, ViewContainerRef, ComponentFactory, ComponentRef, Injector } from '@angular/core';
 import { ModalComponent } from './modal.component';
-import { IModalResultData, IModal, IModalResult, IModalComponent, IPreclose } from './modal-types.class';
+import { IModalResultData, IModal, IModalResult, IModalComponent, IPreclose, IClassPreclose } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable, from } from 'rxjs';
@@ -534,7 +534,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	private performClosing(modalResult: IModalResult, data: any): Observable<any> {
 		const childComponent = this._componentInstanceRef.instance;
-		const preCloseFnRef: IPreclose = childComponent.preClose || function() {};
+		const preCloseFnRef: IClassPreclose = childComponent.preClose || function() {};
 
 		const closeFn = error => {
 			// notify observer about error in pre closing phase
@@ -568,7 +568,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 		this.preCloseToObservable(
 			(result: IModalResultData<any>) => preCloseFnRef.call(childComponent, result),
 			modalResult,
-			data
+			null,
+			false
 		).pipe(
 			filter((value) => value !== false),
 			switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
@@ -579,14 +580,19 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	private preCloseToObservable(
-		closeFn: IPreclose,
+		closeFn: IPreclose | IClassPreclose,
 		modalResult: IModalResult,
-		data?: any
+		data?: any,
+		emitData: boolean = true
 	): Observable<boolean> {
 		return Observable.create((observable) => {
 
 			if (closeFn) {
-				const result = closeFn({ modalResult, data });
+				/**
+				 * emit data only if preClose from code is called,
+				 * in class preClose emit only event
+				 */
+				const result = !emitData ? (closeFn as IClassPreclose)(modalResult) : (closeFn as IPreclose)({ modalResult, data });
 
 				if (isPromise(result)) {
 					from(result).subscribe((r) => observable.next(r));

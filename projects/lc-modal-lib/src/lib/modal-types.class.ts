@@ -20,6 +20,9 @@ export interface IModal<T> {
 export type IPreclose<T = any> = (result: IModalResultData<T>) =>
 									Observable<boolean> | Promise<boolean> | boolean;
 
+export type IClassPreclose<T = any> = (result: IModalResult) =>
+									Observable<boolean> | Promise<boolean> | boolean;
+
 export interface IModalComponent<T> {
 	isActive: boolean;
 	isModal: boolean;
@@ -28,7 +31,7 @@ export interface IModalComponent<T> {
 	cancel: () => Observable<void> | Promise<void> | void;
 	title: string;
 	setTitle: (title: string) => void;
-	preClose?: IPreclose<T>;
+	preClose?: IClassPreclose<T>;
 }
 
 export interface IModalDimensions {
