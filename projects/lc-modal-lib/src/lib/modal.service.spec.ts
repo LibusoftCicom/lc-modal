@@ -187,7 +187,7 @@ describe('ModalComponentHost', () => {
 				.component(ModalChildComponent)
 				.preClose(({ modalResult }) => {
 					SpyFunctions.preClose(modalResult);
-					return Promise.resolve();
+					return true;
 				})
 				.open();
 
