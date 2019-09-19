@@ -175,7 +175,7 @@ describe('ModalComponentHost', () => {
 			fixture.detectChanges();
 			tick(150);
 
-			expect(preCloseSpyFunctions).toHaveBeenCalledWith(IModalResult.Cancel);
+			expect(preCloseSpyFunctions).toHaveBeenCalledWith({ modalResult: IModalResult.Cancel, data: null });
 		})
 	);
 	// 9
