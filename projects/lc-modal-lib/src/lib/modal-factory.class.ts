@@ -1,9 +1,10 @@
 import { ComponentFactoryResolver, ViewContainerRef, ComponentFactory, ComponentRef, Injector } from '@angular/core';
 import { ModalComponent } from './modal.component';
-import { IModalResultData, IModal, IModalResult, IModalComponent } from './modal-types.class';
+import { IModalResultData, IModal, IModalResult, IModalComponent, IPreclose } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, isObservable, from } from 'rxjs';
+import { filter, flatMap, switchMap } from 'rxjs/operators';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -36,7 +37,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private _additionalParams: any;
 
-	private _preCloseFn: ({ modalResult, data }: IModalResultData<any>) => Observable<any> | Promise<any> = null;
+	private _preCloseFn: IPreclose = null;
 
 	private _closeOnESC = true;
 
@@ -98,6 +99,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 	private _focusElement: HTMLElement;
 
 	private _positionOnScreenCenter = false;
+
+	private _dimensions: { height: number; width: number; units: string } | null = null;
 
 	constructor(
 		private cfr: ComponentFactoryResolver,
@@ -382,7 +385,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	/**
 	 * method try to find focusable element depending on ModalSelectors
-	 * first find out where to do checking, if we already have some modal before this use that modal like host otherwise use body
+	 * first find out where to do checking, if we already have
+	 * some modal before this use that modal like host otherwise use body
 	 *
 	 * In host element check is current document.activeElement in ignore list, if it is try to find autoFocus element
 	 * and set it like element which will be focused after new modal is closed
@@ -530,7 +534,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	private performClosing(modalResult: IModalResult, data: any): Observable<any> {
 		const childComponent = this._componentInstanceRef.instance;
-		const preCloseFnRef = childComponent.preClose || function() {};
+		const preCloseFnRef: IPreclose = childComponent.preClose || function() {};
 
 		const closeFn = error => {
 			// notify observer about error in pre closing phase
@@ -561,47 +565,47 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this.destroy();
 		};
 
-		// first call preClose in class
-		// then call that one which is set from code
-		this.preCloseToPromise((closingType: IModalResult) => preCloseFnRef.call(childComponent, closingType), modalResult)
-			.then(() => this.preCloseToPromise(this._preCloseFn, modalResult, true, data))
-			.then(confirmFn, closeFn);
+		this.preCloseToObservable(
+			(result: IModalResultData<any>) => preCloseFnRef.call(childComponent, result),
+			modalResult,
+			data
+		).pipe(
+			filter((value) => value !== false),
+			switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
+			filter((value) => value !== false)
+		).subscribe(confirmFn, closeFn);
 
 		return this._closingStatus.asObservable();
 	}
 
-	/**
-	 * convert sync or Observable to Promise method
-	 */
-	private preCloseToPromise(closeFn, modalResult: IModalResult, withObject: boolean = false, data?: any): Promise<any> {
-		if (closeFn) {
-			let preCloseFn;
+	private preCloseToObservable(
+		closeFn: IPreclose,
+		modalResult: IModalResult,
+		data?: any
+	): Observable<boolean> {
+		return Observable.create((observable) => {
 
-			if (withObject !== false) {
-				preCloseFn = closeFn({ modalResult, data });
+			if (closeFn) {
+				const result = closeFn({ modalResult, data });
+
+				if (isPromise(result)) {
+					from(result).subscribe((r) => observable.next(r));
+				} else if (isObservable(result)) {
+					result.subscribe((r) => observable.next(r));
+				} else {
+					observable.next(result as boolean);
+				}
 			} else {
-				preCloseFn = closeFn(modalResult);
+				observable.next(true);
 			}
-
-			if (!preCloseFn) {
-				return Promise.resolve();
-			}
-
-			// if( preCloseFn instanceof Promise ){
-			if (isPromise(preCloseFn)) {
-				return <Promise<any>>preCloseFn;
-			} else {
-				return (<Observable<any>>preCloseFn).toPromise();
-			}
-		}
-		return Promise.resolve();
+		});
 	}
 
 	/**
 	 * @description set pre close callback function
 	 * method will be executed before modal closing
 	 */
-	public preClose<T, S>(fn: ({ modalResult, data }: IModalResultData<T>) => Observable<S> | Promise<S>): this {
+	public preClose<T>(fn: IPreclose<T>): this {
 		this._preCloseFn = fn;
 		return this;
 	}
@@ -727,8 +731,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		}
 		return this;
 	}
-
-	private _dimensions: { height: number; width: number; units: string } = null;
 
 	public setDimensions(height: number, width: number, units: string = 'px'): this {
 		this._dimensions = { height, width, units };

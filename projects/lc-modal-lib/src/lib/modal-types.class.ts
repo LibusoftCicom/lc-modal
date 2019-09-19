@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
 export enum IModalResult {
 	Cancel = 0,
@@ -17,17 +17,32 @@ export interface IModal<T> {
 	component: (comp: any) => T;
 }
 
+export type IPreclose<T = any> = (result: IModalResultData<T>) =>
+									Observable<boolean> | Promise<boolean> | boolean;
+
 export interface IModalComponent<T> {
 	isActive: boolean;
+	isModal: boolean;
 	params: any;
-	confirm: (data: any) => Observable<IModalResultData<T>>;
-	cancel: () => Observable<IModalResultData<T>>;
+	confirm: (data: any) => Observable<void> | Promise<void> | void;
+	cancel: () => Observable<void> | Promise<void> | void;
 	title: string;
 	setTitle: (title: string) => void;
-	preClose?: (modalResult: IModalResult) => Subject<IModalResultData<T>> | Promise<IModalResultData<T>>;
+	preClose?: IPreclose<T>;
 }
 
 export interface IModalDimensions {
 	height?: number;
 	width?: number;
+}
+
+
+export abstract class BaseModalComponent<T = any> implements IModalComponent<T> {
+	public isActive: boolean;
+	public isModal: boolean;
+	public params: any;
+	public title: string;
+	public confirm(data: T): Observable<void> | Promise<void> | void {}
+	public cancel(): Observable<void> | Promise<void> | void {}
+	public setTitle(title: string): void {}
 }

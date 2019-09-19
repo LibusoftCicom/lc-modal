@@ -119,10 +119,24 @@
               <li class="list-group-item">
                 <p>1. Install lc-modal package from npm:</p>
                 <code>npm install @libusoftcicom/lc-modal</code>
-              </li>
+			  </li>
+			  <li class="list-group-item">
+				  <p>2. Make a component</p>
+				<pre><code>
+import &#123; BaseModalComponent &#125; from '@libusoftcicom/lc-modal';
+
+@Component(&#123;
+   template: `
+   &lt;form (ngSubmit)="confirm(model)"&gt;&lt;/form&gt;
+      &lt;button type="submit"&gt;Submit&lt;/button&gt;
+   &lt;/form&gt;
+   `
+&#125;)
+export class ModalComponentExample extends BaseModalComponent &#123;&#125;
+</code></pre>
+			  </li>
               <li class="list-group-item">
-                <p>
-                  2. Register ModalModule in NgModule with components that are opened in modal:</p>
+                <p>3. Register ModalModule in NgModule with components that are opened in modal:</p>
                 <pre><code>
    import &#123; ModalModule &#125; from '@libusoftcicom/lc-modal';
    import &#123; ModalComponentExample &#125; from '...'; // component used in modal
@@ -142,11 +156,11 @@
               </code></pre>
               </li>
               <li class="list-group-item">
-                <p>3. Add modal anchor component</p>
+                <p>4. Add modal anchor component</p>
                 <code>&lt;dialog-anchor&gt;&lt;/dialog-anchor&gt;</code>
               </li>
               <li class="list-group-item">
-                <p>4. Open modal</p>
+                <p>5. Open modal</p>
                 <pre><code>
     let modalResult = await this.modal
       .title('Example modal')

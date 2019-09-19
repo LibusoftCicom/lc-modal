@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { Modal } from '@libusoftcicom/lc-modal';
+import { Modal, IModalResult } from '@libusoftcicom/lc-modal';
 import { ModalComponentExample } from './modal-example/modal-example.component';
 import { ModalComponentExample2 } from './modal-example2/modal-example.component';
+import { IModalResultData } from 'projects/lc-modal-lib/src/lc-modal';
 
 @Component({
 	selector: 'app-root',
@@ -25,7 +26,7 @@ export class AppComponent {
 	}
 
 	public async openFormModal() {
-		let modalResult = await this.modal
+		let result = await this.modal
 			.title('Form modal')
 			.setHeight(370)
 			.setWidth(700)
@@ -35,8 +36,8 @@ export class AppComponent {
 			.draggable(true)
 			.showMaximize(true)
 			.open();
-		this.result = modalResult.data;
-		this.status = modalResult.modalResult;
+		this.result = result.data;
+		this.status = result.modalResult;
 	}
 
 	public async fullScreenModal() {

@@ -19,10 +19,10 @@
     ],
     "paths": {
       "@libusoftcicom/lc-modal": [
-        "dist-lib/"
+        "projects/lc-modal-lib/src/lc-modal"
       ],
       "@libusoftcicom/lc-modal/*": [
-        "dist-lib/*"
+        "projects/lc-modal-lib/src/lib/*"
       ]
     }
   }
