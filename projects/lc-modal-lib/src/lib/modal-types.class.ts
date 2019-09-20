@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 export enum IModalResult {
 	Cancel = 0,
@@ -28,8 +28,8 @@ export interface IModalComponent<T> {
 	isActive: boolean;
 	isModal: boolean;
 	params: any;
-	confirm: (data: any) => Observable<void> | Promise<void> | void;
-	cancel: () => Observable<void> | Promise<void> | void;
+	confirm: (data: any) => Observable<void>;
+	cancel: () => Observable<void>;
 	title: string;
 	setTitle: (title: string) => void;
 	preClose?: IClassPreclose;
@@ -46,7 +46,7 @@ export abstract class BaseModalComponent<T = any> implements IModalComponent<T> 
 	public isModal: boolean;
 	public params: any;
 	public title: string;
-	public confirm(data: T): Observable<void> | Promise<void> | void {}
-	public cancel(): Observable<void> | Promise<void> | void {}
+	public confirm(data: T): Observable<void> { return of(null); }
+	public cancel(): Observable<void> { return of(null); }
 	public setTitle(title: string): void {}
 }

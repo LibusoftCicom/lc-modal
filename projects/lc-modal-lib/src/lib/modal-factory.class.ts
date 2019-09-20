@@ -4,7 +4,7 @@ import { IModalResultData, IModal, IModalResult, IModalComponent, IPreclose, ICl
 import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable, from } from 'rxjs';
-import { filter, flatMap, switchMap } from 'rxjs/operators';
+import { filter, switchMap, tap, finalize } from 'rxjs/operators';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -32,8 +32,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	private _modalStatus: Subject<IModalResultData<any>> = new Subject();
 
 	private _viewReady: Subject<any> = new Subject();
-
-	private _closingStatus: Subject<any> = new Subject();
 
 	private _additionalParams: any;
 
@@ -121,14 +119,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public get isReady(): Observable<void> {
 		return this._viewReady.asObservable();
-	}
-
-	/**
-	 * @description method returns Observable success when pre close method is successful,
-	 * and error when pre close method prevent closing
-	 */
-	public get closingStatus(): Observable<void> {
-		return this._closingStatus.asObservable();
 	}
 
 	/**
@@ -506,7 +496,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * close modal without confirmation
 	 * also return Observable object which will notify subscriptions about successful pre closing
 	 */
-	public cancel(): Observable<any> {
+	public cancel(): Observable<void> {
 		return this.performClosing(IModalResult.Cancel, null);
 	}
 
@@ -514,7 +504,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * close modal with confirmation and custom result
 	 * also return Observable object which will notify subscriptions about successful pre closing
 	 */
-	public close(data: any, modalResult: IModalResult): Observable<any> {
+	public close(data: any, modalResult: IModalResult): Observable<void> {
 		return this.performClosing(modalResult, data);
 	}
 
@@ -522,7 +512,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * close modal with confirmation
 	 * also return Observable object which will notify subscriptions about successful pre closing
 	 */
-	public confirm(data: any): Observable<any> {
+	public confirm(data: any): Observable<void> {
 		return this.performClosing(IModalResult.Confirm, data);
 	}
 
@@ -532,13 +522,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * on the end execute callback
 	 * also return Observable object which will notify subscriptions about successful pre closing
 	 */
-	private performClosing(modalResult: IModalResult, data: any): Observable<any> {
+	private performClosing(modalResult: IModalResult, data: any): Observable<void> {
+		const closingStatus = new Subject<void>();
 		const childComponent = this._componentInstanceRef.instance;
 		const preCloseFnRef: IClassPreclose = childComponent.preClose || function() {};
 
 		const closeFn = error => {
 			// notify observer about error in pre closing phase
-			this._closingStatus.error(error);
+			closingStatus.error(error);
 
 			// execute only if we want to close it on error
 			if (this._closeOnError) {
@@ -552,6 +543,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 				this.destroy();
 			}
+			closingStatus.complete();
 		};
 
 		const confirmFn = () => {
@@ -561,9 +553,18 @@ export class ModalFactory implements IModal<ModalFactory> {
 			}
 
 			// notify observer about successful pre closing
-			this._closingStatus.next();
+			emitCloseStatus();
 			this.destroy();
 		};
+
+		const emitCloseStatus = () => {
+			closingStatus.next();
+			closingStatus.complete();
+		};
+
+		closingStatus.pipe(finalize(() => {
+			console.log('closing');
+		})).subscribe();
 
 		this.preCloseToObservable(
 			(result: IModalResultData<any>) => preCloseFnRef.call(childComponent, result),
@@ -571,12 +572,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 			null,
 			false
 		).pipe(
+			tap((value) => value === false ? emitCloseStatus() : null),
 			filter((value) => value !== false),
 			switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
+			tap((value) => value === false ? emitCloseStatus() : null),
 			filter((value) => value !== false)
 		).subscribe(confirmFn, closeFn);
 
-		return this._closingStatus.asObservable();
+		return closingStatus.asObservable();
 	}
 
 	private preCloseToObservable(
@@ -595,7 +598,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 				const result = !emitData ? (closeFn as IClassPreclose)(modalResult) : (closeFn as IPreclose)({ modalResult, data });
 
 				if (isPromise(result)) {
-					from(result).subscribe((r) => observable.next(r));
+					from(result).subscribe(observable);
 				} else if (isObservable(result)) {
 					result.subscribe(observable, () => {});
 				} else {
