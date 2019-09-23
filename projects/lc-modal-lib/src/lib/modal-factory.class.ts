@@ -562,10 +562,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 			closingStatus.complete();
 		};
 
-		closingStatus.pipe(finalize(() => {
-			console.log('closing');
-		})).subscribe();
-
 		this.preCloseToObservable(
 			(result: IModalResultData<any>) => preCloseFnRef.call(childComponent, result),
 			modalResult,
