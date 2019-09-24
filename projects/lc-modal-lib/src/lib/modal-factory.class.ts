@@ -1,10 +1,11 @@
 import { ComponentFactoryResolver, ViewContainerRef, ComponentFactory, ComponentRef, Injector } from '@angular/core';
 import { ModalComponent } from './modal.component';
-import { IModalResultData, IModal, IModalResult, IModalComponent, IPreclose, IClassPreclose } from './modal-types.class';
+import { IModalResultData, IModal,
+	IModalResult, IModalComponent, IPreclose, IClassPreclose } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable, from } from 'rxjs';
-import { filter, switchMap, tap, finalize } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -585,6 +586,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		emitData: boolean = true
 	): Observable<boolean> {
 		return Observable.create((observable) => {
+			const emitResult = (r: boolean) => observable.next(r);
 
 			if (closeFn) {
 				/**
@@ -594,14 +596,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 				const result = !emitData ? (closeFn as IClassPreclose)(modalResult) : (closeFn as IPreclose)({ modalResult, data });
 
 				if (isPromise(result)) {
-					from(result).subscribe(observable);
+					(result as Promise<boolean>).then(emitResult);
 				} else if (isObservable(result)) {
-					result.subscribe(observable, () => {});
+					observable.toPromise().then(emitResult);
 				} else {
-					observable.next(result as boolean);
+					emitResult(result as boolean);
 				}
 			} else {
-				observable.next(true);
+				emitResult(true);
 			}
 		});
 	}
