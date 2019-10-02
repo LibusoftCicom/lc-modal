@@ -587,6 +587,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	): Observable<boolean> {
 		return Observable.create((observable) => {
 			const emitResult = (r: boolean) => observable.next(r);
+			const emitError = (err) => observable.error(err);
 
 			if (closeFn) {
 				/**
@@ -596,11 +597,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 				const result = !emitData ? (closeFn as IClassPreclose)(modalResult) : (closeFn as IPreclose)({ modalResult, data });
 
 				if (isPromise(result)) {
-					(result as Promise<boolean>).then(emitResult);
+					(result as Promise<boolean>).then(emitResult, emitError);
 				} else if (isObservable(result)) {
-					observable.toPromise().then(emitResult);
+					observable.toPromise().then(emitResult, emitError);
 				} else {
-					emitResult(result as boolean);
+					try {
+						emitResult(result as boolean);
+					} catch (error) {
+						emitError(error);
+					}
 				}
 			} else {
 				emitResult(true);
