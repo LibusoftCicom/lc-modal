@@ -205,13 +205,12 @@ describe('ModalComponentHost', () => {
 		fakeAsync(() => {
 			modalService
 				.component(ModalChildComponent)
-				.preClose(() => {
+				.preClose(({ modalResult }) => {
+					SpyFunctions.preClose(modalResult);
 					return of(true);
 				})
 				.open()
-				.then(({ modalResult }) => {
-					SpyFunctions.preClose(modalResult);
-				});
+				.then(SpyFunctions.onConfirm, SpyFunctions.onCancel);
 
 			(<Modal>component.modal).active().cancel();
 
