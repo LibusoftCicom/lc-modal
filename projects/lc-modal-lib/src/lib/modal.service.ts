@@ -164,4 +164,8 @@ export class Modal implements IModal<ModalFactory> {
 	public get length(): number {
 		return this.model.length;
 	}
+
+	public setActiveModal(id){
+		this.modals.map(modal => (modal.id === id ? modal.active = true : modal.active = false));
+	}
 }

@@ -13,6 +13,7 @@ import {
 import { Subject } from 'rxjs';
 import { IModalDimensions } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
+import { Modal } from './modal.service';
 
 @Component({
 	selector: `modal-component`,
@@ -81,15 +82,26 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	private _initMinWidth;
 
-	constructor(vcRef: ViewContainerRef, private renderer: Renderer2, private config: ModalConfig) {
+	private _positionLeft: number;
+
+	private _positionTop: number;
+
+	public isonlyLastModalActive = true;
+
+	constructor(vcRef: ViewContainerRef, private renderer: Renderer2, private config: ModalConfig, private modalService: Modal) {
 		this.hostElementRef = vcRef.element;
 	}
 
 	public ngOnInit(): void {
+		if (this.isonlyLastModalActive === true) {
+			this.renderer.addClass(this.hostElementRef.nativeElement, 'singleActive');
+		} else {
+			this.renderer.removeClass(this.hostElementRef.nativeElement, 'singleActive');
+		}
+
 		// on resize we clear this._boundBox
 		this.eventDestroyHooks.push(
 			this.renderer.listen('window', 'resize', () => {
-				this._boundBox = null;
 
 				// recalculate new position
 				// just return all modals inside bound box
@@ -188,6 +200,11 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		return this;
 	}
 
+	public onlyLastModalActive(isonlyLastModalActive: boolean): ModalComponent {
+		this.isonlyLastModalActive = isonlyLastModalActive;
+		return this;
+	}
+
 	public setClass(className: string): ModalComponent {
 		return this.changeClass(className);
 	}
@@ -249,8 +266,11 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	/**
 	 * @description return element height with padding and border
 	 *
-	 * offsetHeight -> height + padding + border / https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetHeight
-	 * clientHeight -> height + padding / https://developer.mozilla.org/en-US/docs/Web/API/Element/clientHeight
+	 * offsetHeight -> height + padding + border
+	 * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetHeight
+	 *
+	 * clientHeight -> height + padding
+	 * https://developer.mozilla.org/en-US/docs/Web/API/Element/clientHeight
 	 */
 	public getHeight(): number {
 		const el = this.modalBox.nativeElement;
@@ -293,16 +313,13 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		right: number;
 	} {
 		const styles = this.getStyles();
-		const top = parseInt(styles.marginTop);
-		const bottom = parseInt(styles.marginBottom);
-		const left = parseInt(styles.marginLeft);
-		const right = parseInt(styles.marginRight);
+		const top = parseInt(styles.marginTop, 10);
+		const bottom = parseInt(styles.marginBottom, 10);
+		const left = parseInt(styles.marginLeft, 10);
+		const right = parseInt(styles.marginRight, 10);
 
 		return { top, left, bottom, right };
 	}
-
-	private _positionLeft: number;
-	private _positionTop: number;
 
 	/**
 	 * set position relative to parent overlay
@@ -325,7 +342,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	 * @param  position
 	 */
 	private checkBoundBox(dir: 'left' | 'top', position: number): number {
-		if (dir == 'left') {
+		if (dir === 'left') {
 			const boundboxWidth = this.getBoundbox().width;
 
 			if (position > boundboxWidth - 30) {
@@ -397,20 +414,13 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		return (this._positionTop = this.getClientRects().top);
 	}
 
-	private _boundBox: { height: number; width: number } = null;
 
 	public getBoundbox(): { height: number; width: number } {
-		if (this._boundBox) {
-			return this._boundBox;
-		}
-		const hostEl = this.hostElementRef.nativeElement;
-		const height = hostEl.offsetHeight || hostEl.clientHeight;
-		const width = hostEl.offsetWidth || hostEl.clientWidth;
-		return (this._boundBox = { height, width });
+		return { height: window.innerHeight, width: window.innerWidth };
 	}
 
 	private invokeElementMethod(element: any, methodName: string): void {
-		if (methodName == 'focus' && element.setActive) {
+		if (methodName === 'focus' && element.setActive) {
 			element.setActive();
 			return;
 		}
@@ -426,6 +436,8 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		if (this._closeByDocument && this._closeFn && this.hostElementRef.nativeElement === targetEl) {
 			this._closeFn();
 		}
+
+		this.modalService.setActiveModal(this['id']);
 
 		if (this.hostElementRef.nativeElement === targetEl) {
 			event.preventDefault();
@@ -447,8 +459,8 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 			if (document.activeElement === focusOnParentClosing) {
 				return;
 			}
-			const focusableElements = this.filterAllowed(<HTMLElement>focusOnParentClosing);
-			if (focusableElements.length > 0) {
+			const focusablehtmlElements = this.filterAllowed(<HTMLElement>focusOnParentClosing);
+			if (focusablehtmlElements.length > 0) {
 				this.handleFocus(focusOnParentClosing);
 				return;
 			}
@@ -626,7 +638,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 			const ignoreElements = Array.from((<HTMLElement>el).querySelectorAll(this.config.IgnoreFocusSelectors));
 
 			if (ignoreElements.length > 0) {
-				return focusableElements.filter((element: Element) => ignoreElements.indexOf(element) == -1);
+				return focusableElements.filter((element: Element) => ignoreElements.indexOf(element) === -1);
 			}
 
 			return focusableElements;

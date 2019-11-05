@@ -35,6 +35,7 @@ export class AppComponent {
 			.component(ModalComponentExample)
 			.draggable(true)
 			.showMaximize(true)
+			.onlyLastModalActive(false)
 			.open();
 		this.result = result.data;
 		this.status = result.modalResult;

@@ -1,4 +1,14 @@
 :host {
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently
+								  supported by Chrome and Opera */
+}
+
+:host.singleActive {
 	display: block;
 	position: fixed;
 	top: 0;
@@ -7,13 +17,10 @@
 	height: 100vh;
 	z-index: 10002;
 	background: transparent;
-	-webkit-touch-callout: none; /* iOS Safari */
-	-webkit-user-select: none; /* Safari */
-	-khtml-user-select: none; /* Konqueror HTML */
-	-moz-user-select: none; /* Firefox */
-	-ms-user-select: none; /* Internet Explorer/Edge */
-	user-select: none; /* Non-prefixed version, currently
-								  supported by Chrome and Opera */
+}
+
+:host.active .modal-box{
+	z-index: 10000;
 }
 
 :host ::ng-deep lc-datepicker {
@@ -39,7 +46,7 @@
 
 .modal-pseudo,
 .modal-box {
-	position: absolute;
+	position: fixed;
 	top: 40%;
 	left: 0;
 	right: 0;
@@ -48,7 +55,6 @@
 	width: 580px;
 	background: #fff;
 	margin: auto;
-	z-index: 2;
 	pointer-events: all;
 	-webkit-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
 	-moz-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);

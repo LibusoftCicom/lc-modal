@@ -1,7 +1,13 @@
 import { ComponentFactoryResolver, ViewContainerRef, ComponentFactory, ComponentRef, Injector } from '@angular/core';
 import { ModalComponent } from './modal.component';
-import { IModalResultData, IModal,
-	IModalResult, IModalComponent, IPreclose, IClassPreclose } from './modal-types.class';
+import {
+	IModalResultData,
+	IModal,
+	IModalResult,
+	IModalComponent,
+	IPreclose,
+	IClassPreclose
+} from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable, from } from 'rxjs';
@@ -14,6 +20,76 @@ function isPromise(obj: any): obj is Promise<any> {
 }
 
 export class ModalFactory implements IModal<ModalFactory> {
+
+	constructor(
+		private cfr: ComponentFactoryResolver,
+		private viewContainerRef: ViewContainerRef,
+		public id: number,
+		private injector: Injector,
+		private modals: ModalFactory[],
+		private config: ModalConfig
+	) {
+		this._maximize.subscribe(maximize => {
+			this._setFullScreen(maximize);
+		});
+	}
+
+	/**
+	 * @description method returns Observable when modal component view is ready
+	 * * @returns
+	 */
+	public get isReady(): Observable<void> {
+		return this._viewReady.asObservable();
+	}
+
+	/**
+	 * get active modal
+	 */
+	public get active(): boolean {
+		return this._active;
+	}
+
+	/**
+	 * set modal as active, put flags to modal wrapper and child component we used
+	 * to create modal
+	 */
+	public set active(state: boolean) {
+		const wrapperInstance = this._baseComponentWrapperRef.instance;
+		// set property isActive to child component so
+		// programers could be able to check is their component current active one
+		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
+
+		if (state) {
+			// auto focus elements and
+			// if element is active set class active to it
+			wrapperInstance.setClass('active').autoFocus();
+		} else {
+			wrapperInstance.removeClass('active');
+		}
+	}
+
+	/**
+	 * set reference to previous Modal instance
+	 */
+	public set previous(modal: this) {
+		this._previous = modal;
+	}
+
+	/**
+	 * get reference to previous Modal instance
+	 */
+	public get previous(): this {
+		return this._previous;
+	}
+
+	/**
+	 * get reference to component in modal
+	 */
+	public get modalComponentRef(): this {
+		return !!this._componentInstanceRef && !!this._componentInstanceRef.instance
+			? this._componentInstanceRef.instance
+			: null;
+	}
 	private contentHost = '#content';
 
 	private _title: string = null;
@@ -101,54 +177,27 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private _dimensions: { height: number; width: number; units: string } | null = null;
 
-	constructor(
-		private cfr: ComponentFactoryResolver,
-		private viewContainerRef: ViewContainerRef,
-		public id: number,
-		private injector: Injector,
-		private modals: ModalFactory[],
-		private config: ModalConfig
-	) {
-		this._maximize.subscribe(maximize => {
-			this._setFullScreen(maximize);
-		});
-	}
-
-	/**
-	 * @description method returns Observable when modal component view is ready
-	 * * @returns
-	 */
-	public get isReady(): Observable<void> {
-		return this._viewReady.asObservable();
-	}
-
-	/**
-	 * get active modal
-	 */
-	public get active(): boolean {
-		return this._active;
-	}
-
-	/**
-	 * set modal as active, put flags to modal wrapper and child component we used
-	 * to create modal
-	 */
-	public set active(state: boolean) {
-		const wrapperInstance = this._baseComponentWrapperRef.instance;
-		// set property isActive to child component so
-		// programers could be able to check is their component current active one
-		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
-
-		if (state) {
-			// auto focus elements and
-			// if element is active set class active to it
-			wrapperInstance.setClass('active').autoFocus();
-		} else {
-			wrapperInstance.removeClass('active');
-		}
-	}
-
 	private componentReady = false;
+
+	private _fullscreen = false;
+
+	private _isDraggable = false;
+
+	private _lastDraggableState = false;
+
+	private _changeDraggable: (enabled: boolean) => void = null;
+
+	private _isResizable = false;
+
+	private _lastResizableState = false;
+
+	private _changeResizable: (enabled: boolean) => void = null;
+
+	private _previous: this = null;
+
+	private _destroyFn: Function = null;
+
+	private _onlyLastModalActive: boolean = true;
 
 	/**
 	 * trigger detect changes in modal component
@@ -198,6 +247,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		);
 		const hostComponentInstance = this.getComponentInstance();
 		const changeDetectorRef = this._baseComponentWrapperRef.changeDetectorRef;
+		hostComponentInstance['id'] = this.id;
 
 		// (<any>hostComponentInstance).factory = this;
 
@@ -217,6 +267,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		hostComponentInstance.showMaximize(this._showMaximize);
 		hostComponentInstance.maximize = this._maximize;
 		hostComponentInstance.maximized = this._fullscreen;
+		hostComponentInstance.onlyLastModalActive(this._onlyLastModalActive);
 
 		this._changeClassName = (className: string, add: boolean) => {
 			if (add) {
@@ -485,8 +536,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 				top = move;
 			}
 		} else {
-			top = boundbox.height / 2 - height / 2;
-			left = boundbox.width / 2 - width / 2;
+			top = window.innerHeight / 2 - height / 2;
+			left = window.innerWidth / 2 - width / 2;
 		}
 
 		// set new position
@@ -568,13 +619,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 			modalResult,
 			null,
 			false
-		).pipe(
-			tap((value) => value === false ? emitCloseStatus() : null),
-			filter((value) => value !== false),
-			switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
-			tap((value) => value === false ? emitCloseStatus() : null),
-			filter((value) => value !== false)
-		).subscribe(confirmFn, closeFn);
+		)
+			.pipe(
+				tap(value => (value === false ? emitCloseStatus() : null)),
+				filter(value => value !== false),
+				switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
+				tap(value => (value === false ? emitCloseStatus() : null)),
+				filter(value => value !== false)
+			)
+			.subscribe(confirmFn, closeFn);
 
 		return closingStatus.asObservable();
 	}
@@ -585,16 +638,18 @@ export class ModalFactory implements IModal<ModalFactory> {
 		data?: any,
 		emitData: boolean = true
 	): Observable<boolean> {
-		return Observable.create((observable) => {
+		return Observable.create(observable => {
 			const emitResult = (r: boolean) => observable.next(r);
-			const emitError = (err) => observable.error(err);
+			const emitError = err => observable.error(err);
 
 			if (closeFn) {
 				/**
 				 * emit data only if preClose from code is called,
 				 * in class preClose emit only event
 				 */
-				const result = !emitData ? (closeFn as IClassPreclose)(modalResult) : (closeFn as IPreclose)({ modalResult, data });
+				const result = !emitData
+					? (closeFn as IClassPreclose)(modalResult)
+					: (closeFn as IPreclose)({ modalResult, data });
 
 				if (isPromise(result)) {
 					(result as Promise<boolean>).then(emitResult, emitError);
@@ -628,6 +683,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public title(title: string): this {
 		this._title = title;
+		return this;
+	}
+
+	/**
+	 * Set onlyLastModalActive
+	 * @param  enable
+	 */
+	public onlyLastModalActive(enable: boolean): this {
+		this._onlyLastModalActive = enable;
 		return this;
 	}
 
@@ -755,8 +819,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
-	private _fullscreen = false;
-
 	public setFullScreen(fullscreen: boolean = true) {
 		this._maximize.next(fullscreen);
 		return this;
@@ -817,11 +879,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
-	private _isDraggable = false;
-	private _lastDraggableState = false;
-
-	private _changeDraggable: (enabled: boolean) => void = null;
-
 	/**
 	 * Enable modal dragging
 	 */
@@ -848,11 +905,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		return this._draggable(enabled, true);
 	}
-
-	private _isResizable = false;
-	private _lastResizableState = false;
-
-	private _changeResizable: (enabled: boolean) => void = null;
 
 	private _resizable(enabled: boolean, saveState: boolean): this {
 		if (saveState) {
@@ -888,33 +940,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		this._baseComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
 		return this;
 	}
-
-	private _previous: this = null;
-
-	/**
-	 * set reference to previous Modal instance
-	 */
-	public set previous(modal: this) {
-		this._previous = modal;
-	}
-
-	/**
-	 * get reference to previous Modal instance
-	 */
-	public get previous(): this {
-		return this._previous;
-	}
-
-	/**
-	 * get reference to component in modal
-	 */
-	public get modalComponentRef(): this {
-		return !!this._componentInstanceRef && !!this._componentInstanceRef.instance
-			? this._componentInstanceRef.instance
-			: null;
-	}
-
-	private _destroyFn: Function = null;
 
 	/**
 	 * set method which will remove Modal instance from

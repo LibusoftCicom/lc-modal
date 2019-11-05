@@ -50,7 +50,10 @@ export class ModalAnchor implements OnInit, OnDestroy {
 			this.scrollPosition = this.view.pageYOffset;
 		}
 
-		if (modals > 0) {
+		const areModalsSetToSingleActive = this.modal.modals
+			.reduce((acc, modal) => acc && modal.getComponentInstance().isonlyLastModalActive, true);
+
+		if (modals > 0 && areModalsSetToSingleActive) {
 			this.renderer.setStyle(this.body, 'overflow', 'hidden');
 			this.renderer.setStyle(this.body, 'position', 'fixed');
 			this.renderer.setStyle(this.body, 'left', 0);
