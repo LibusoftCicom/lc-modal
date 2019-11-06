@@ -166,6 +166,6 @@ export class Modal implements IModal<ModalFactory> {
 	}
 
 	public setActiveModal(id){
-		this.modals.map(modal => (modal.id === id ? modal.active = true : modal.active = false));
+		this.modals.map(modal => (modal.id === id ? (modal.activeClass = true) : (modal.activeClass = false)));
 	}
 }

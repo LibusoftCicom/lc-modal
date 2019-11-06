@@ -49,6 +49,20 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this._active;
 	}
 
+	public set activeClass(state: boolean) {
+		const wrapperInstance = this._baseComponentWrapperRef.instance;
+		// set property isActive to child component so
+		// programers could be able to check is their component current active one
+		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
+
+		if (state) {
+			// auto focus elements and
+			// if element is active set class active to it
+			wrapperInstance.setClass('active');
+		} else {
+			wrapperInstance.removeClass('active');
+		}
+	}
 	/**
 	 * set modal as active, put flags to modal wrapper and child component we used
 	 * to create modal
@@ -58,13 +72,12 @@ export class ModalFactory implements IModal<ModalFactory> {
 		// set property isActive to child component so
 		// programers could be able to check is their component current active one
 		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
+		this.activeClass = state;
 
 		if (state) {
 			// auto focus elements and
 			// if element is active set class active to it
-			wrapperInstance.setClass('active').autoFocus();
-		} else {
-			wrapperInstance.removeClass('active');
+			wrapperInstance.autoFocus();
 		}
 	}
 
