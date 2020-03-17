@@ -6,30 +6,41 @@
 	-ms-user-select: none; /* Internet Explorer/Edge */
 	user-select: none; /* Non-prefixed version, currently
 								  supported by Chrome and Opera */
-}
-
-:host.singleActive {
 	display: block;
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
 	height: 100vh;
-	z-index: 10002;
-	background: transparent;
-}
-
-:host.active .modal-box{
 	z-index: 10000;
+	background: transparent;
 }
 
 :host ::ng-deep lc-datepicker {
 	position: fixed;
 }
 
+:host(.without-overlay) {
+	height: 0;
+}
+
 :host(.message-box),
 :host(.active) {
+	z-index: 10002;
+}
+
+:host(.message-box),
+:host(.overlay-active) {
 	background: rgba(0, 0, 0, 0.4);
+	z-index: 10002;
+}
+
+:host(.overlay-active) {
+	z-index: 10000;
+
+	.modal-box {
+		z-index: 10002;
+	}
 }
 
 :host(.fullscreen) .modal-box {
@@ -107,20 +118,93 @@
 	color: #858f98;
 }
 
+.modal-box {
+	display: flex;
+	flex-direction: column;
+	z-index: 10001;
+}
+
 .modal-header {
-	background: #5e666f;
-	color: #fff;
-	height: 28px;
-	padding: 0 10px;
-	line-height: 28px;
-	font-size: 14px;
-	position: absolute;
-	z-index: 10;
-	top: 0;
-	left: 0;
-	width: 100%;
 	border-radius: 0px;
-	padding-right: 60px;
+	color: #000;
+	display: flex;
+	height: 28px;
+	font-size: 14px;
+	line-height: 28px;
+	padding: 0 5px 0 10px;
+	width: 100%;
+	z-index: 10;
+
+	&.colored {
+		background: #5e666f;
+		color: #fff;
+
+		:host-context(.dark) & {
+			background: #2b3135;
+		}
+
+		:host-context(.light) & {
+			background: #374c6b;
+		}
+
+		:host-context(.purple) & {
+			background: #4527a0;
+		}
+
+		:host-context(.indigo) & {
+			background: #283593;
+		}
+
+		:host-context(.teal) & {
+			background: #00695c;
+		}
+
+		:host-context(.gray) & {
+			background: #424242;
+		}
+	}
+
+	.modal-title {
+		display: block;
+		line-height: 1.6rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.modal-controls {
+		align-self: flex-end;
+		text-align: right;
+		width: 85px;
+	}
+
+	.modal-header-btn {
+		cursor: pointer;
+		display: inline-block;
+		font-weight: 700;
+		height: 26px;
+		line-height: 26px;
+		text-align: center;
+		vertical-align: middle;
+		width: 26px;
+		z-index: 100;
+
+		&.close-btn {
+			font-size: 24px;
+
+			&:after {
+				font-family: 'Helvetica', Arial, sans-serif;
+				content: '\0D7';
+				cursor: pointer;
+			}
+		}
+
+		&.maximize-btn {
+			font-size: 15px;
+			font-weight: 100;
+			line-height: 28px;
+		}
+	}
 }
 
 /* .modal-header[draggable-handle] {
@@ -129,84 +213,21 @@
     cursor: grab;
 } */
 
-.modal-title {
-	display: block;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	line-height: 1.6rem;
-}
-
-:host-context(.dark) .modal-header {
-	background: #2b3135;
-}
-
-:host-context(.light) .modal-header {
-	background: #374c6b;
-}
-
-:host-context(.purple) .modal-header {
-	background: #4527a0;
-}
-
-:host-context(.indigo) .modal-header {
-	background: #283593;
-}
-
-:host-context(.teal) .modal-header {
-	background: #00695c;
-}
-
-:host-context(.gray) .modal-header {
-	background: #424242;
-}
 
 .modal-body {
-	position: relative;
-	padding: 26px 0 0;
 	height: 100%;
-}
-
-.modal-content {
-	background: white;
+	padding: 0;
 	position: relative;
-	height: 100%;
-	padding: 10px;
-	// overflow: auto;
-	overflow-y: auto;
-	overflow-x: hidden;
-}
 
-.modal-header-btn {
-	position: absolute;
-	cursor: pointer;
-	z-index: 100;
-	color: #fff;
-	height: 26px;
-	width: 26px;
-	text-align: center;
-	line-height: 26px;
-	font-weight: 700;
-}
-
-.close-btn {
-	top: 0;
-	right: 0;
-	font-size: 24px;
-}
-
-.close-btn:after {
-	font-family: 'Helvetica', Arial, sans-serif;
-	content: '\0D7';
-	cursor: pointer;
-}
-
-.maximize-btn {
-	top: 0;
-	right: 26px;
-	font-size: 15px;
-	font-weight: 100;
-	line-height: 28px;
+	.modal-content {
+		background: white;
+		border: 0;
+		height: 100%;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding: 10px;
+		position: relative;
+	}
 }
 
 @media handheld, screen and (max-width: 600px) {

@@ -8,63 +8,57 @@ import {
 	ComponentRef,
 	HostListener,
 	Renderer2,
-	OnDestroy
+	OnDestroy,
+	ComponentFactory
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { IModalDimensions } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
-import { Modal } from './modal.service';
+import { IHostModalComponent } from './modal-component.interface';
 
 @Component({
 	selector: `modal-component`,
-	template: `
-		<div class="modal-box" #modalBox draggable>
-			<div
-				*ngIf="_showMaximize"
-				class="fa modal-header-btn maximize-btn"
-				[ngClass]="{ 'fa-window-maximize': !maximized, 'fa-window-restore': maximized }"
-				(click)="_maximizeRestore()"
-			></div>
-			<div *ngIf="_showClose" class="modal-header-btn close-btn" (click)="_closeFn()"></div>
-			<div *ngIf="!!title && isDraggable" class="modal-header" (dblclick)="toggleMaximize()" draggable-handle>
-				<span class="modal-title">{{ title }}</span>
-			</div>
-			<div *ngIf="!!title && !isDraggable" class="modal-header" (dblclick)="toggleMaximize()">
-				<span class="modal-title">{{ title }}</span>
-			</div>
-			<div class="modal-body">
-				<div class="modal-content">
-					<ng-template #content></ng-template>
-				</div>
-			</div>
-			<resizable *ngIf="isResizable"></resizable>
-		</div>
-	`,
+	templateUrl: `./modal.component.html`,
 	styleUrls: ['./modal.component.scss']
 })
-export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostModalComponent {
+
 	@ViewChild('content', { static: true, read: ViewContainerRef })
 	private contentRef: ViewContainerRef;
 
-	@ViewChild('modalBox', { static: true }) private modalBox: ElementRef;
+	@ViewChild('modalBox', { static: true })
+	private modalBox: ElementRef;
+
+	private escCloseEnabled = false;
+
+	private closeByDocumentEnabled = false;
+
+	private hostElementRef: ElementRef;
+
+	private eventDestroyHooks: Function[] = [];
+
+	private initMinHeight: number;
+
+	private initMinWidth: number;
+
+	private positionLeft: number;
+
+	private positionTop: number;
 
 	public title: string;
 
-	public _showClose = false;
+	public closeEnabled = false;
 
-	public _showMaximize = false;
+	public maximizeEnabled = false;
 
 	public maximized = false;
 
+	/**
+	 * currently value is set from modal-factory
+	 */
 	public maximize: Subject<boolean>;
 
-	private _closeByESC = false;
-
-	private _closeByDocument = false;
-
-	public _closeFn: () => void;
-
-	private hostElementRef: ElementRef;
+	public closeFn: () => void;
 
 	public isActive = false;
 
@@ -72,33 +66,16 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	public isResizable = false;
 
-	private eventDestroyHooks: Function[] = [];
+	public focusOnChangeElement: Element = null;
 
-	public _focusOnChange: Element = null;
+	public readonly resizeObserver: Subject<IModalDimensions> = new Subject();
 
-	public resizeObserver: Subject<IModalDimensions> = new Subject();
-
-	private _initMinHeight;
-
-	private _initMinWidth;
-
-	private _positionLeft: number;
-
-	private _positionTop: number;
-
-	public isonlyLastModalActive = true;
-
-	constructor(vcRef: ViewContainerRef, private renderer: Renderer2, private config: ModalConfig, private modalService: Modal) {
+	constructor(vcRef: ViewContainerRef,
+		private renderer: Renderer2, private config: ModalConfig) {
 		this.hostElementRef = vcRef.element;
 	}
 
 	public ngOnInit(): void {
-		if (this.isonlyLastModalActive === true) {
-			this.renderer.addClass(this.hostElementRef.nativeElement, 'singleActive');
-		} else {
-			this.renderer.removeClass(this.hostElementRef.nativeElement, 'singleActive');
-		}
-
 		// on resize we clear this._boundBox
 		this.eventDestroyHooks.push(
 			this.renderer.listen('window', 'resize', () => {
@@ -119,12 +96,12 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 					this.clearMinHeight();
 					this.clearMinWidth();
 				} else {
-					if (this._initMinHeight != null) {
-						this.minHeight(this._initMinHeight);
+					if (this.initMinHeight != null) {
+						this.minHeight(this.initMinHeight);
 					}
 
-					if (this._initMinWidth != null) {
-						this.minWidth(this._initMinWidth);
+					if (this.initMinWidth != null) {
+						this.minWidth(this.initMinWidth);
 					}
 				}
 			})
@@ -141,22 +118,40 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	public ngOnDestroy(): void {
 		this.eventDestroyHooks.forEach(destroyFn => destroyFn());
-		this._focusOnChange = null;
+		this.focusOnChangeElement = null;
+	}
+
+	public get headerVisible(): boolean {
+		return !!this.title;
+	}
+
+	public displayOverlay(visible: boolean = true): void {
+		if (visible !== true) {
+			this.renderer.addClass(this.hostElementRef.nativeElement, 'without-overlay');
+		} else {
+			this.renderer.removeClass(this.hostElementRef.nativeElement, 'without-overlay');
+		}
+	}
+
+	public display(isVisible: boolean): void {
+		if (this.hostElementRef) {
+			this.renderer.setStyle(this.hostElementRef.nativeElement, 'display', isVisible ? 'block' : 'none');
+		}
 	}
 
 	/**
 	 * Set modal title
 	 */
-	public setTitle(title: string): ModalComponent {
+	public setTitle(title: string): this {
 		this.title = title;
 		return this;
 	}
 
 	/**
-	 * Shows maximize/minimize button
+	 * display maximize/minimize button
 	 */
-	public showMaximize(show: boolean): ModalComponent {
-		this._showMaximize = show;
+	public showMaximize(show: boolean): this {
+		this.maximizeEnabled = show;
 		return this;
 	}
 
@@ -164,65 +159,54 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	 * on double click toggle modal size
 	 */
 	public toggleMaximize() {
-		if (!this._showMaximize) {
+		if (!this.maximizeEnabled) {
 			return;
 		}
 
-		this._maximizeRestore();
+		this.maximizeRestore();
 	}
 
 	/**
-	 * Enable close button show
+	 * display close button
 	 */
-	public showClose(): ModalComponent {
-		this._showClose = true;
+	public showClose(): this {
+		this.closeEnabled = true;
 		return this;
 	}
 
 	/**
 	 * enable close by ESC
 	 */
-	public closeOnESC(): ModalComponent {
-		this._closeByESC = true;
-		return this;
-	}
-
-	public closeOnClick(): ModalComponent {
-		this._closeByDocument = true;
+	public closeOnESC(): this {
+		this.escCloseEnabled = true;
 		return this;
 	}
 
 	/**
-	 * set method used on X button
+	 * enable close by click on overlay
 	 */
-	public setCloseFn(fn: () => void): ModalComponent {
-		this._closeFn = fn;
+	public closeOnClick(): this {
+		this.closeByDocumentEnabled = true;
 		return this;
 	}
 
-	public onlyLastModalActive(isonlyLastModalActive: boolean): ModalComponent {
-		this.isonlyLastModalActive = isonlyLastModalActive;
+	/**
+	 * set method used on CLOSE button
+	 */
+	public setCloseFn(fn: () => void): this {
+		this.closeFn = fn;
 		return this;
 	}
 
-	public setClass(className: string): ModalComponent {
+	public setClass(className: string): this {
 		return this.changeClass(className);
 	}
 
-	public removeClass(className: string): ModalComponent {
+	public removeClass(className: string): this {
 		return this.changeClass(className, false);
 	}
 
-	private changeClass(className: string, add: boolean = true): ModalComponent {
-		if (add === true) {
-			this.renderer.addClass(this.hostElementRef.nativeElement, className);
-		} else {
-			this.renderer.removeClass(this.hostElementRef.nativeElement, className);
-		}
-		return this;
-	}
-
-	public addComponent(componentFactory: any): ComponentRef<{}> {
+	public addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T> {
 		return this.contentRef.createComponent(componentFactory);
 	}
 
@@ -231,14 +215,14 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	public minHeight(value: number): void {
-		if (this._initMinHeight == null) {
-			this._initMinHeight = value;
+		if (this.initMinHeight == null) {
+			this.initMinHeight = value;
 		}
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight', value.toString() + 'px');
 	}
 
 	public getMinHeight() {
-		return this._initMinHeight || 0;
+		return this.initMinHeight || 0;
 	}
 
 	public clearMinHeight(): void {
@@ -250,14 +234,14 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	public minWidth(value: number): void {
-		if (this._initMinWidth == null) {
-			this._initMinWidth = value;
+		if (this.initMinWidth == null) {
+			this.initMinWidth = value;
 		}
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth', value.toString() + 'px');
 	}
 
-	public getMinWidth() {
-		return this._initMinWidth || 0;
+	public getMinWidth(): number {
+		return this.initMinWidth || 0;
 	}
 
 	public clearMinWidth(): void {
@@ -304,7 +288,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 	}
 
 	/**
-	 * get element calculated moragins
+	 * get element calculated margins
 	 */
 	public getMargins(): {
 		top: number;
@@ -323,8 +307,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	/**
 	 * set position relative to parent overlay
-	 * @param  top
-	 * @param  left
 	 */
 	public setPosition(top: number, left: number): void {
 		if (top !== null) {
@@ -336,108 +318,68 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
-	/**
-	 * helper method to determinate new postion according to boundbox
-	 * @param  dir
-	 * @param  position
-	 */
-	private checkBoundBox(dir: 'left' | 'top', position: number): number {
-		if (dir === 'left') {
-			const boundboxWidth = this.getBoundbox().width;
+	public get hostElement(): HTMLElement {
+		return this.hostElementRef.nativeElement;
+	}
 
-			if (position > boundboxWidth - 30) {
-				return boundboxWidth - 30;
-			}
-
-			const n = 0 - this.getWidth() + 60;
-			if (position < n) {
-				return n;
-			}
-
-			return position;
-		} else {
-			const boundboxHeight = this.getBoundbox().height;
-
-			if (position > boundboxHeight - 30) {
-				return boundboxHeight - 30;
-			}
-
-			if (position < 0) {
-				return 0;
-			}
-
-			return position;
-		}
+	public maximizeRestore() {
+		this.maximize.next(!this.maximized);
 	}
 
 	/**
 	 * set left position relative to parent overlay
-	 * @param  left
 	 */
 	public setLeftPosition(left: number): void {
-		this._positionLeft = this.checkBoundBox('left', left);
-		this.renderer.setStyle(this.modalBox.nativeElement, 'left', this._positionLeft.toString() + 'px');
+		this.positionLeft = this.checkBoundBox('left', left);
+		this.renderer.setStyle(this.modalBox.nativeElement, 'left', this.positionLeft.toString() + 'px');
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginLeft', '0');
 	}
 
 	/**
 	 * set top position relative to parent overlay
-	 * @param  top
 	 */
 	public setTopPosition(top: number): void {
-		this._positionTop = this.checkBoundBox('top', top);
-		this.renderer.setStyle(this.modalBox.nativeElement, 'top', this._positionTop.toString() + 'px');
+		this.positionTop = this.checkBoundBox('top', top);
+		this.renderer.setStyle(this.modalBox.nativeElement, 'top', this.positionTop.toString() + 'px');
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginTop', '0');
 	}
 
 	/**
 	 * get left position relative to parent overlay
-	 * @return
 	 */
 	public getPositionLeft(): number {
-		if (this._positionLeft != null) {
-			return this._positionLeft;
+		if (this.positionLeft != null) {
+			return this.positionLeft;
 		}
 
-		return (this._positionLeft = this.getClientRects().left);
+		return (this.positionLeft = this.getClientRects().left);
 	}
 
 	/**
 	 * get top position relative to parent overlay
-	 * @return
 	 */
 	public getPositionTop(): number {
-		if (this._positionTop != null) {
-			return this._positionTop;
+		if (this.positionTop != null) {
+			return this.positionTop;
 		}
 
-		return (this._positionTop = this.getClientRects().top);
+		return (this.positionTop = this.getClientRects().top);
 	}
 
+	@HostListener('mousedown', ['$event'])
+	public setActive(): void {}
 
 	public getBoundbox(): { height: number; width: number } {
 		return { height: window.innerHeight, width: window.innerWidth };
-	}
-
-	private invokeElementMethod(element: any, methodName: string): void {
-		if (methodName === 'focus' && element.setActive) {
-			element.setActive();
-			return;
-		}
-		if (element[methodName]) {
-			element[methodName]();
-		}
 	}
 
 	@HostListener('click', ['$event'])
 	public documentCloseListener(event: MouseEvent): void {
 		const targetEl = event.target || event.srcElement;
 
-		if (this._closeByDocument && this._closeFn && this.hostElementRef.nativeElement === targetEl) {
-			this._closeFn();
+		if (this.closeByDocumentEnabled && this.closeFn && this.hostElementRef.nativeElement === targetEl) {
+			this.closeFn();
 		}
-
-		this.modalService.setActiveModal(this['id']);
 
 		if (this.hostElementRef.nativeElement === targetEl) {
 			event.preventDefault();
@@ -445,16 +387,16 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
-	public get focusOnChange() {
-		return this._focusOnChange;
+	public get focusOnChange(): Element {
+		return this.focusOnChangeElement;
 	}
 
 	public set focusOnChange(el: Element) {
-		this._focusOnChange = el;
+		this.focusOnChangeElement = el;
 	}
 
-	public autoFocus() {
-		const focusOnParentClosing = this._focusOnChange;
+	public autoFocus(): void {
+		const focusOnParentClosing = this.focusOnChangeElement;
 		if (focusOnParentClosing) {
 			if (document.activeElement === focusOnParentClosing) {
 				return;
@@ -510,6 +452,57 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 
 	public focusPrevious(event: KeyboardEvent): void {
 		this.handleTabKey(event, true);
+	}
+
+	private changeClass(className: string, add: boolean = true): this {
+		if (add === true) {
+			this.renderer.addClass(this.hostElementRef.nativeElement, className);
+		} else {
+			this.renderer.removeClass(this.hostElementRef.nativeElement, className);
+		}
+		return this;
+	}
+
+	/**
+	 * helper method to determinate new postion according to boundbox
+	 */
+	private checkBoundBox(dir: 'left' | 'top', position: number): number {
+		if (dir === 'left') {
+			const boundboxWidth = this.getBoundbox().width;
+
+			if (position > boundboxWidth - 30) {
+				return boundboxWidth - 30;
+			}
+
+			const n = 0 - this.getWidth() + 60;
+			if (position < n) {
+				return n;
+			}
+
+			return position;
+		} else {
+			const boundboxHeight = this.getBoundbox().height;
+
+			if (position > boundboxHeight - 30) {
+				return boundboxHeight - 30;
+			}
+
+			if (position < 0) {
+				return 0;
+			}
+
+			return position;
+		}
+	}
+
+	private invokeElementMethod(element: any, methodName: string): void {
+		if (methodName === 'focus' && element.setActive) {
+			element.setActive();
+			return;
+		}
+		if (element[methodName]) {
+			element[methodName]();
+		}
 	}
 
 	private handleTabKey(event: KeyboardEvent, backward: boolean): void {
@@ -645,13 +638,5 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 
 		return [];
-	}
-
-	public get hostElement(): HTMLElement {
-		return this.hostElementRef.nativeElement;
-	}
-
-	public _maximizeRestore() {
-		this.maximize.next(!this.maximized);
 	}
 }

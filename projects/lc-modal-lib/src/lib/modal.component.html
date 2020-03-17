@@ -1,0 +1,35 @@
+<div class="modal-box" #modalBox draggable>
+	<div *ngIf="isDraggable; else notDraggableHeader"
+		class="modal-header"
+		[ngClass]="{'colored': headerVisible }"
+		(dblclick)="toggleMaximize()"
+		draggable-handle>
+		<ng-container *ngTemplateOutlet="headerContent"></ng-container>
+	</div>
+
+	<ng-template #notDraggableHeader>
+		<div class="modal-header"
+			[ngClass]="{'colored': headerVisible }"
+			(dblclick)="toggleMaximize()">
+			<ng-container *ngTemplateOutlet="headerContent"></ng-container>
+		</div>
+	</ng-template>
+
+	<ng-template #headerContent>
+		<div class="modal-title">{{ title }}</div>
+		<div class="modal-controls">
+			<div *ngIf="maximizeEnabled"
+				class="fa modal-header-btn maximize-btn"
+				[ngClass]="{ 'fa-window-maximize': !maximized, 'fa-window-restore': maximized }"
+				(click)="maximizeRestore()"></div>
+			<div *ngIf="closeEnabled" class="modal-header-btn close-btn" (click)="closeFn()"></div>
+		</div>
+	</ng-template>
+
+	<div class="modal-body">
+		<div class="modal-content">
+			<ng-template #content></ng-template>
+		</div>
+	</div>
+	<resizable *ngIf="isResizable"></resizable>
+</div>

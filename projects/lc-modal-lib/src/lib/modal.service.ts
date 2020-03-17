@@ -123,8 +123,7 @@ export class Modal implements IModal<ModalFactory> {
 	 * @return
 	 */
 	public active(): ModalFactory {
-		// active should always be last one
-		return this.last();
+		return this.model.active();
 	}
 
 	/**
@@ -163,9 +162,5 @@ export class Modal implements IModal<ModalFactory> {
 	 */
 	public get length(): number {
 		return this.model.length;
-	}
-
-	public setActiveModal(id){
-		this.modals.map(modal => (modal.id === id ? (modal.activeClass = true) : (modal.activeClass = false)));
 	}
 }

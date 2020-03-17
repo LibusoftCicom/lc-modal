@@ -15,18 +15,19 @@ export class AppComponent {
 	constructor(private modal: Modal) {}
 
 	public async example() {
-		let modalResult = await this.modal
+		const modalResult = await this.modal
 			.component(ModalComponentExample2)
 			.title('Example modal')
 			.setHeight(300)
 			.setWidth(400)
+			.draggable(true)
 			.open();
 		this.result = modalResult.data;
 		this.status = modalResult.modalResult;
 	}
 
 	public async openFormModal() {
-		let result = await this.modal
+		const result = await this.modal
 			.title('Form modal')
 			.setHeight(370)
 			.setWidth(700)
@@ -35,19 +36,41 @@ export class AppComponent {
 			.component(ModalComponentExample)
 			.draggable(true)
 			.showMaximize(true)
-			.onlyLastModalActive(false)
 			.open();
 		this.result = result.data;
 		this.status = result.modalResult;
 	}
 
 	public async fullScreenModal() {
-		let modalResult = await this.modal
+		const modalResult = await this.modal
 			.component(ModalComponentExample2)
 			.title('Fullscreen modal')
 			.setHeight(370)
 			.setWidth(700)
 			.setFullScreen()
+			.open();
+		this.result = modalResult.data;
+		this.status = modalResult.modalResult;
+	}
+
+	public async withoutHeaderModal() {
+		const modalResult = await this.modal
+			.component(ModalComponentExample)
+			.setHeight(370)
+			.setWidth(700)
+			.open();
+		this.result = modalResult.data;
+		this.status = modalResult.modalResult;
+	}
+
+	public async withoutOverlayModal() {
+		const modalResult = await this.modal
+			.component(ModalComponentExample)
+			.setHeight(370)
+			.setWidth(700)
+			.draggable(true)
+			.overlay(false)
+			.showMaximize(true)
 			.open();
 		this.result = modalResult.data;
 		this.status = modalResult.modalResult;

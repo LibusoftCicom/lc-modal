@@ -10,7 +10,7 @@ import {
 } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
-import { Observable, Subject, isObservable, from } from 'rxjs';
+import { Observable, Subject, isObservable, from, BehaviorSubject } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 
 function isPromise(obj: any): obj is Promise<any> {
@@ -21,143 +21,50 @@ function isPromise(obj: any): obj is Promise<any> {
 
 export class ModalFactory implements IModal<ModalFactory> {
 
-	constructor(
-		private cfr: ComponentFactoryResolver,
-		private viewContainerRef: ViewContainerRef,
-		public id: number,
-		private injector: Injector,
-		private modals: ModalFactory[],
-		private config: ModalConfig
-	) {
-		this._maximize.subscribe(maximize => {
-			this._setFullScreen(maximize);
-		});
-	}
+	private readonly contentHost = '#content';
 
-	/**
-	 * @description method returns Observable when modal component view is ready
-	 * * @returns
-	 */
-	public get isReady(): Observable<void> {
-		return this._viewReady.asObservable();
-	}
+	private titleValue: string = null;
 
-	/**
-	 * get active modal
-	 */
-	public get active(): boolean {
-		return this._active;
-	}
+	private paramsValue: any = null;
 
-	public set activeClass(state: boolean) {
-		const wrapperInstance = this._baseComponentWrapperRef.instance;
-		// set property isActive to child component so
-		// programers could be able to check is their component current active one
-		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
+	private additionalParamsValue: any = null;
 
-		if (state) {
-			// auto focus elements and
-			// if element is active set class active to it
-			wrapperInstance.setClass('active');
-		} else {
-			wrapperInstance.removeClass('active');
-		}
-	}
-	/**
-	 * set modal as active, put flags to modal wrapper and child component we used
-	 * to create modal
-	 */
-	public set active(state: boolean) {
-		const wrapperInstance = this._baseComponentWrapperRef.instance;
-		// set property isActive to child component so
-		// programers could be able to check is their component current active one
-		this._active = this._componentInstanceRef.instance.isActive = wrapperInstance.isActive = state;
-		this.activeClass = state;
+	private componentFactory: ComponentFactory<any> = null;
 
-		if (state) {
-			// auto focus elements and
-			// if element is active set class active to it
-			wrapperInstance.autoFocus();
-		}
-	}
+	private componentInstanceRef: ComponentRef<any> = null;
 
-	/**
-	 * set reference to previous Modal instance
-	 */
-	public set previous(modal: this) {
-		this._previous = modal;
-	}
+	private componentFactoryRef: () => any = null;
 
-	/**
-	 * get reference to previous Modal instance
-	 */
-	public get previous(): this {
-		return this._previous;
-	}
+	private hostComponentWrapperFactory: ComponentFactory<ModalComponent> = null;
 
-	/**
-	 * get reference to component in modal
-	 */
-	public get modalComponentRef(): this {
-		return !!this._componentInstanceRef && !!this._componentInstanceRef.instance
-			? this._componentInstanceRef.instance
-			: null;
-	}
-	private contentHost = '#content';
+	private hostComponentWrapperRef: ComponentRef<ModalComponent> = null;
 
-	private _title: string = null;
+	private modalStatusChange: Subject<IModalResultData<any>> = new Subject();
 
-	private _params: any = null;
+	private viewReadyChange: Subject<any> = new Subject();
 
-	private _componentFactory: ComponentFactory<any> = null;
+	private preCloseFn: IPreclose = null;
 
-	private _component: any = null;
+	private closeOnEscEnabled = true;
 
-	private _componentInstanceRef: any = null;
+	private showCloseButton = true;
 
-	private _baseComponentWrapperFactory: ComponentFactory<ModalComponent> = null;
+	private maximizeChange: Subject<boolean> = new Subject<boolean>();
 
-	private _baseComponentWrapperRef: ComponentRef<ModalComponent> = null;
+	private showMaximizeButton = false;
 
-	private _modalStatus: Subject<IModalResultData<any>> = new Subject();
+	private closeByDocument = false;
 
-	private _viewReady: Subject<any> = new Subject();
+	private closeOnErrorEnabled = false;
 
-	private _additionalParams: any;
-
-	private _preCloseFn: IPreclose = null;
-
-	private _closeOnESC = true;
-
-	private _showCloseButton = true;
-
-	private _maximize: Subject<boolean> = new Subject<boolean>();
-
-	private _showMaximize = false;
-
-	private _closeByDocument = false;
-
-	private _closeOnError = false;
-
-	public _active = false;
-
-	/**
-	 * disable colsing modal by CloseAll method,
-	 * modal can only be closed by user
-	 */
-	public closeOnlyByUser = false;
+	private isActive = false;
 
 	// initial className
-	private _initClassName: string = null;
+	private initClassName: string = null;
 
-	// method used to add/remove class name after we instance
-	private _changeClassName: (className: string, add: boolean) => void = null;
+	private height: number = null;
 
-	private _height: number = null;
-
-	private _minHeight: number = null;
-
-	private _changeMinHeight: (width: number) => void = null;
+	private minHeight: number = null;
 
 	// method used to set height
 	private _changeHeight: (height: number) => void = null;
@@ -210,13 +117,138 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private _destroyFn: Function = null;
 
-	private _onlyLastModalActive: boolean = true;
+	private displayOverlay = true;
+
+	private isVisible = true;
+	private visibilityChanges: BehaviorSubject<boolean> = new BehaviorSubject(this.isVisible);
+
+	/**
+	 * disable closing modal by CloseAll method,
+	 * modal can only be closed by user
+	 */
+	public closeOnlyByUser = false;
+
+	public isDestroying = false;
+
+	constructor(
+		private cfr: ComponentFactoryResolver,
+		private viewContainerRef: ViewContainerRef,
+		public id: number,
+		private injector: Injector,
+		private modals: ModalFactory[],
+		private config: ModalConfig
+	) {
+		this.maximizeChange.subscribe(maximize => {
+			this._setFullScreen(maximize);
+		});
+	}
+
+	/**
+	 * @description method returns Observable when modal component view is ready
+	 * * @returns
+	 */
+	public get isReady(): Observable<void> {
+		return this.viewReadyChange.asObservable();
+	}
+
+	/**
+	 * get active modal
+	 */
+	public get active(): boolean {
+		return this.isActive;
+	}
+
+	/**
+	 * set modal as active, put flags to modal wrapper and child component we used
+	 * to create modal
+	 */
+	public set active(state: boolean) {
+		/**
+		 * toggle all other modals active state to false
+		 */
+		this.modals.forEach((modal) => {
+			modal.hostComponentRef.removeClass('overlay-active');
+
+			if (modal !== this && state === true) {
+				modal.active = false;
+			}
+		});
+
+		const wrapperInstance = this.hostComponentWrapperRef.instance;
+		// set property isActive to child component so
+		// programers could be able to check is their component current active one
+		this.isActive = this.componentRef.isActive = wrapperInstance.isActive = state;
+		// hide or show overlay on this instance
+		wrapperInstance.displayOverlay(this.displayOverlay);
+
+		if (state) {
+			// auto focus elements and
+			// if element is active set class active to it
+			wrapperInstance.setClass('active').autoFocus();
+		} else {
+			wrapperInstance.removeClass('active');
+		}
+
+		/**
+		 * if element have overlay and if same element is not last
+		 * we can't place it above all other with overlay
+		 */
+		this.preserveOverlay();
+	}
+
+	/**
+	 * only last element with overlay can have it
+	 */
+	private preserveOverlay(): void {
+		const lastIndex = this.modals.length - 1;
+
+		for (let i = lastIndex; i > -1; i--) {
+			const modal = this.modals[i];
+
+			if (modal.displayOverlay && !modal.isDestroying) {
+				modal.hostComponentRef.setClass('overlay-active');
+				return;
+			}
+		}
+	}
+
+	public overlay(enabled: boolean = true): this {
+		this.displayOverlay = enabled;
+		return this;
+	}
+
+	public get overlayVisible(): boolean {
+		return this.displayOverlay;
+	}
+
+	/**
+	 * set reference to previous Modal instance
+	 */
+	public set previous(modal: this) {
+		this._previous = modal;
+	}
+
+	/**
+	 * get reference to previous Modal instance
+	 */
+	public get previous(): this {
+		return this._previous;
+	}
+
+	/**
+	 * get reference to component in modal
+	 */
+	public get componentRef(): IModalComponent<any> {
+		return !!this.componentInstanceRef && !!this.componentInstanceRef.instance
+			? this.componentInstanceRef.instance
+			: null;
+	}
 
 	/**
 	 * trigger detect changes in modal component
 	 */
 	public detectChanges(): void {
-		const changeDetectorRef = this._baseComponentWrapperRef.changeDetectorRef;
+		const changeDetectorRef = this.hostComponentWrapperRef.changeDetectorRef;
 
 		if (!(<any>changeDetectorRef).destroyed && this.componentReady) {
 			changeDetectorRef.markForCheck();
@@ -233,18 +265,39 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * @return  confirm and cancel callbacks
 	 */
 	public open<D>(): Promise<IModalResultData<D>> {
-		if (!this._component) {
+		if (!this.componentFactoryRef) {
 			return <any>Promise.reject(`Before calling open() you need to set component()`);
 		}
 
 		this.prepareComponent();
-
-		return this._modalStatus.toPromise();
+		return this.modalStatusChange.toPromise();
 	}
 
 	public positionOnScreenCenter(center: boolean = true) {
 		this._positionOnScreenCenter = center;
 		return this;
+	}
+
+	private changeClassName(className: string, add: boolean): void {
+		const hostComponentInstance = this.hostComponentRef;
+		if (!hostComponentInstance) {
+			return;
+		}
+
+		if (add) {
+			hostComponentInstance.setClass(className);
+		} else {
+			hostComponentInstance.removeClass(className);
+		}
+	}
+
+	private changeMinHeight(height: number): void {
+		const hostComponentInstance = this.hostComponentRef;
+		if (!hostComponentInstance) {
+			return;
+		}
+
+		hostComponentInstance.minHeight(height);
 	}
 
 	/**
@@ -253,54 +306,45 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	private prepareComponent(): void {
 		// ModalComponent instance
-		this._baseComponentWrapperRef = this.viewContainerRef.createComponent(
-			this._baseComponentWrapperFactory,
+		this.hostComponentWrapperRef = this.viewContainerRef.createComponent(
+			this.hostComponentWrapperFactory,
 			null,
 			this.injector
 		);
-		const hostComponentInstance = this.getComponentInstance();
-		const changeDetectorRef = this._baseComponentWrapperRef.changeDetectorRef;
+		const hostComponentInstance = this.hostComponentRef;
+		const changeDetectorRef = this.hostComponentWrapperRef.changeDetectorRef;
 		hostComponentInstance['id'] = this.id;
 
 		// (<any>hostComponentInstance).factory = this;
 
 		// forward settings to Modal box instance
-		hostComponentInstance.setTitle(this._title).setCloseFn(() => this.cancel());
+		hostComponentInstance.setTitle(this.titleValue).setCloseFn(() => this.cancel());
 
-		if (this._showCloseButton) {
+		hostComponentInstance.setActive = () => this.active = true;
+
+		if (this.showCloseButton) {
 			hostComponentInstance.showClose();
 		}
-		if (this._closeOnESC) {
+		if (this.closeOnEscEnabled) {
 			hostComponentInstance.closeOnESC();
 		}
-		if (this._closeByDocument) {
+		if (this.closeByDocument) {
 			hostComponentInstance.closeOnClick();
 		}
 
-		hostComponentInstance.showMaximize(this._showMaximize);
-		hostComponentInstance.maximize = this._maximize;
+		hostComponentInstance.showMaximize(this.showMaximizeButton);
+		hostComponentInstance.maximize = this.maximizeChange;
 		hostComponentInstance.maximized = this._fullscreen;
-		hostComponentInstance.onlyLastModalActive(this._onlyLastModalActive);
-
-		this._changeClassName = (className: string, add: boolean) => {
-			if (add) {
-				hostComponentInstance.setClass(className);
-			} else {
-				hostComponentInstance.removeClass(className);
-			}
-		};
 
 		// initialy we don't have class-change hook that's why we save className like property
-		if (this._initClassName) {
-			hostComponentInstance.setClass(this._initClassName);
+		if (this.initClassName) {
+			hostComponentInstance.setClass(this.initClassName);
 		}
 
 		// set min height and width
 		this._changeHeight = (height: number) => hostComponentInstance.height(height);
 
 		this._changeWidth = (width: number) => hostComponentInstance.width(width);
-
-		this._changeMinHeight = (height: number) => hostComponentInstance.minHeight(height);
 
 		this._changeMinWidth = (width: number) => hostComponentInstance.minWidth(width);
 
@@ -309,14 +353,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 			hostComponentInstance.width(width, units);
 		};
 
-		if (this._height) {
-			this._changeHeight(this._height);
+		if (this.height) {
+			this._changeHeight(this.height);
 		}
 		if (this._width) {
 			this._changeWidth(this._width);
 		}
-		if (this._minHeight) {
-			this._changeMinHeight(this._minHeight);
+		if (this.minHeight) {
+			this.changeMinHeight(this.minHeight);
 		}
 		if (this._minWidth) {
 			this._changeMinWidth(this._minWidth);
@@ -370,7 +414,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 			}
 			this.componentReady = true;
 
-			this._viewReady.next();
+			this.viewReadyChange.next();
 
 			// else calculate position according to previous modal
 			// but don't do that for messagebox
@@ -390,10 +434,13 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 			// current active element should be focused on modal close
 			// we need to tell previous modal to use this element for focus after we close modal
-			this.previous._baseComponentWrapperRef.instance.focusOnChange = this._focusElement;
+			this.previous.hostComponentWrapperRef.instance.focusOnChange = this._focusElement;
 		}
 
 		changeDetectorRef.detectChanges();
+
+		// toggle status
+		this.visibilityChanges.subscribe((isVisible) => hostComponentInstance.display(isVisible));
 
 		// and set this to be active
 		this.active = true;
@@ -405,7 +452,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 				this.setMinWidth(hostComponentInstance.getWidth());
 			}
 
-			if (!this._minHeight) {
+			if (!this.minHeight) {
 				this.setMinHeight(hostComponentInstance.getHeight());
 			}
 		}
@@ -413,22 +460,24 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	/**
 	 * prepare modal child component
-	 * * @param  parentComponent
 	 */
 	private prepareChildComponent(parentComponent: ModalComponent): IModalComponent<any> {
-		this._componentInstanceRef = parentComponent.addComponent(this._componentFactory);
-		const childComponent = <IModalComponent<any>>this._componentInstanceRef.instance;
+		this.componentInstanceRef = parentComponent.addComponent(this.componentFactory);
+		const childComponent = this.componentRef;
 
-		// potrebno je implementirati određene metode na svaku class-u koja se koristi unutar modala
-		childComponent.params = this._params;
-		childComponent['additionalParams'] = this._additionalParams;
+		/**
+		 * implement members and values to component
+		 * instance
+		 */
+		childComponent.params = this.paramsValue;
+		childComponent['additionalParams'] = this.additionalParamsValue;
 		childComponent['isModal'] = true;
 		childComponent.confirm = (d: any) => this.confirm(d);
 
 		childComponent.cancel = () => this.cancel();
-		childComponent.setTitle = (title: string) => parentComponent.setTitle((this._title = title));
+		childComponent.setTitle = (title: string) => parentComponent.setTitle((this.titleValue = title));
 
-		childComponent.title = this._title;
+		childComponent.title = this.titleValue;
 		return childComponent;
 	}
 
@@ -453,7 +502,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		const previousComponent = this.previous;
 
 		if (previousComponent) {
-			hostElement = previousComponent._componentInstanceRef.location.nativeElement;
+			hostElement = previousComponent.componentInstanceRef.location.nativeElement;
 			if (!hostElement) {
 				console.warn('Is not included known DOM element!');
 			}
@@ -473,7 +522,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		if (ignoreList.length === 0) {
 			return currentActive;
 		} else if (ignoreList.length > 0) {
-			// first check is current active element is in ignore list
+			// first check is current active element in ignore list
 			// if it isn't return it but
 			// if active element isn't our host element or isn't in it,
 			// try to find grid or autofocus elements
@@ -496,7 +545,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	/**
 	 * Set element to focus after modal closes
-	 * @param el HTML element
 	 */
 	public focusOnClose(el: HTMLElement): this {
 		this._focusElement = el;
@@ -506,8 +554,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 	/**
 	 * return modal component instance
 	 */
-	public getComponentInstance(): ModalComponent {
-		return this._baseComponentWrapperRef.instance;
+	public get hostComponentRef(): ModalComponent {
+		return this.hostComponentWrapperRef ? this.hostComponentWrapperRef.instance : null;
 	}
 
 	/**
@@ -521,14 +569,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		const move = 30;
 
-		const wrapperInstance = this.getComponentInstance();
+		const wrapperInstance = this.hostComponentRef;
 
 		const boundbox = wrapperInstance.getBoundbox();
 		const height = wrapperInstance.getHeight();
 		const width = wrapperInstance.getWidth();
 
 		if (this.previous) {
-			const previousWrapperInstance = this.previous.getComponentInstance();
+			const previousWrapperInstance = this.previous.hostComponentRef;
 
 			const previousLeft = previousWrapperInstance.getPositionLeft();
 			const previousTop = previousWrapperInstance.getPositionTop();
@@ -582,6 +630,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	/**
+	 * toggle visibility
+	 */
+	public visible(isVisible: boolean = true): this {
+		this.isVisible = isVisible;
+		this.visibilityChanges.next(isVisible);
+		return this;
+	}
+
+	/**
 	 * Try to perfome closing
 	 * convert Observable to Promise
 	 * on the end execute callback
@@ -589,7 +646,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	private performClosing(modalResult: IModalResult, data: any): Observable<void> {
 		const closingStatus = new Subject<void>();
-		const childComponent = this._componentInstanceRef.instance;
+		const childComponent = this.componentRef;
 		const preCloseFnRef: IClassPreclose = childComponent.preClose || function() {};
 
 		const closeFn = error => {
@@ -597,13 +654,13 @@ export class ModalFactory implements IModal<ModalFactory> {
 			closingStatus.error(error);
 
 			// execute only if we want to close it on error
-			if (this._closeOnError) {
-				if (!this._modalStatus.isStopped) {
-					this._modalStatus.next({
+			if (this.closeOnErrorEnabled) {
+				if (!this.modalStatusChange.isStopped) {
+					this.modalStatusChange.next({
 						modalResult: IModalResult.Cancel,
 						data: null
 					});
-					this._modalStatus.complete();
+					this.modalStatusChange.complete();
 				}
 
 				this.destroy();
@@ -612,9 +669,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 		};
 
 		const confirmFn = () => {
-			if (!this._modalStatus.isStopped) {
-				this._modalStatus.next({ modalResult, data });
-				this._modalStatus.complete();
+			if (!this.modalStatusChange.isStopped) {
+				this.modalStatusChange.next({ modalResult, data });
+				this.modalStatusChange.complete();
 			}
 
 			// notify observer about successful pre closing
@@ -636,7 +693,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 			.pipe(
 				tap(value => (value === false ? emitCloseStatus() : null)),
 				filter(value => value !== false),
-				switchMap(() => this.preCloseToObservable(this._preCloseFn, modalResult, data)),
+				switchMap(() => this.preCloseToObservable(this.preCloseFn, modalResult, data)),
 				tap(value => (value === false ? emitCloseStatus() : null)),
 				filter(value => value !== false)
 			)
@@ -686,34 +743,23 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * method will be executed before modal closing
 	 */
 	public preClose<T>(fn: IPreclose<T>): this {
-		this._preCloseFn = fn;
+		this.preCloseFn = fn;
 		return this;
 	}
 
 	/**
 	 * Set modal title
-	 * @param  title
 	 */
 	public title(title: string): this {
-		this._title = title;
-		return this;
-	}
-
-	/**
-	 * Set onlyLastModalActive
-	 * @param  enable
-	 */
-	public onlyLastModalActive(enable: boolean): this {
-		this._onlyLastModalActive = enable;
+		this.titleValue = title;
 		return this;
 	}
 
 	/**
 	 * Show close button in right top corrner
-	 * @param  enable
 	 */
 	public showClose(enable: boolean): this {
-		this._showCloseButton = enable;
+		this.showCloseButton = enable;
 		return this;
 	}
 
@@ -721,16 +767,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * Enable close button show
 	 */
 	public showMaximize(show: boolean): this {
-		this._showMaximize = show;
+		this.showMaximizeButton = show;
 		return this;
 	}
 
 	/**
 	 * Enable close by ESC
-	 * @param  enable
 	 */
 	public closeOnESC(enable: boolean): this {
-		this._closeOnESC = enable;
+		this.closeOnEscEnabled = enable;
 		return this;
 	}
 
@@ -738,7 +783,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * enable close on document click
 	 */
 	public closeOnClick(): this {
-		this._closeByDocument = true;
+		this.closeByDocument = true;
 		return this;
 	}
 
@@ -746,16 +791,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * forward any parameters to component in modal
 	 */
 	public params(params: any): this {
-		this._params = params;
+		this.paramsValue = params;
 		return this;
 	}
 
 	/**
-	 * Postavi dodatne parametre modala, npr. ako je u params data ili DTO, u
-	 * dodatnim parametrima možda je parametar tipa (omoguciNesto)
+	 * set additional params
 	 */
 	public additionalParams(additionalParams: any): this {
-		this._additionalParams = additionalParams;
+		this.additionalParamsValue = additionalParams;
 		return this;
 	}
 
@@ -763,30 +807,29 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * add custom css className to modal
 	 */
 	public setClass(className: string): this {
-		this._initClassName = className;
-		if (this._changeClassName && className) {
-			this._changeClassName(className, true);
+		this.initClassName = className;
+		if (this.changeClassName && className) {
+			this.changeClassName(className, true);
 		}
 		return this;
 	}
 
 	/**
 	 * remove className from modal
-	 * @param className
 	 */
 	public removeClass(className: string): this {
-		if (this._changeClassName && className) {
-			this._changeClassName(className, false);
+		if (this.changeClassName && className) {
+			this.changeClassName(className, false);
 		}
 		return this;
 	}
 
 	public setHeight(height: number): this {
-		if (!this._minHeight) {
+		if (!this.minHeight) {
 			this.setMinHeight(height);
 		}
 
-		this._height = height;
+		this.height = height;
 		if (this._changeHeight && height > 0) {
 			this._changeHeight(height);
 		}
@@ -794,9 +837,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	public setMinHeight(height: number): this {
-		this._minHeight = height;
-		if (this._changeMinHeight && height > 0) {
-			this._changeMinHeight(height);
+		this.minHeight = height;
+		if (height > 0) {
+			this.changeMinHeight(height);
 		}
 		return this;
 	}
@@ -824,7 +867,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	public setDimensions(height: number, width: number, units: string = 'px'): this {
 		this._dimensions = { height, width, units };
 		if (this._changeDimensions) {
-			const { height, width, units } = this._dimensions;
 			if (height && width && units) {
 				this._changeDimensions(height, width, units);
 			}
@@ -833,7 +875,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	public setFullScreen(fullscreen: boolean = true) {
-		this._maximize.next(fullscreen);
+		this.maximizeChange.next(fullscreen);
 		return this;
 	}
 
@@ -888,7 +930,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * method used to force modal closing after preClose return rejection
 	 */
 	public closeOnError(): this {
-		this._closeOnError = true;
+		this.closeOnErrorEnabled = true;
 		return this;
 	}
 
@@ -948,9 +990,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * Define component which will be opened in modal
 	 */
 	public component<T>(component: T): this {
-		this._component = component;
-		this._componentFactory = this.cfr.resolveComponentFactory(component as any);
-		this._baseComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
+		this.componentFactoryRef = () => component;
+		this.componentFactory = this.cfr.resolveComponentFactory(this.componentFactoryRef());
+		this.hostComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
 		return this;
 	}
 
@@ -966,6 +1008,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * destroy created component
 	 */
 	public destroy(force: boolean = false): void {
+		this.isDestroying = true;
 		if (force !== true) {
 			if (this.previous) {
 				this.previous.active = true;
@@ -989,9 +1032,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this._destroyFn();
 		}
 
-		this._modalStatus.unsubscribe();
-		this._viewReady.unsubscribe();
-		this._baseComponentWrapperRef && this._baseComponentWrapperRef.destroy();
+		this.modalStatusChange.unsubscribe();
+		this.viewReadyChange.unsubscribe();
+		if (this.hostComponentWrapperRef) {
+			this.hostComponentWrapperRef.destroy();
+		}
 		this._focusElement = null;
 	}
 }

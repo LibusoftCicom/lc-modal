@@ -46,7 +46,7 @@ export class ModalViewModel {
 	 * @return
 	 */
 	public last(): ModalFactory {
-		return this._modals[this._modals.length - 1]; // we don't need to sort this list because we use LIFO method
+		return this._modals[this._modals.length - 1];
 	}
 
 	/**
@@ -58,12 +58,19 @@ export class ModalViewModel {
 	}
 
 	/**
+	 * returns active modal
+	 */
+	public active(): ModalFactory {
+		return this._modals.find((model) => model.active);
+	}
+
+	/**
 	 * returns instantiated modal by id
 	 * @param  id
 	 * @return
 	 */
 	public getByID(ID: number): ModalFactory {
-		return this._modals.find((modal: ModalFactory) => modal.id == ID);
+		return this._modals.find((modal: ModalFactory) => modal.id === ID);
 	}
 
 	public get length(): number {
