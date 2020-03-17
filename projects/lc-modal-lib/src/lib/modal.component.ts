@@ -367,7 +367,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	}
 
 	@HostListener('mousedown', ['$event'])
-	public setActive(): void {}
+	public setActive(event: MouseEvent): void {}
 
 	public getBoundbox(): { height: number; width: number } {
 		return { height: window.innerHeight, width: window.innerWidth };
