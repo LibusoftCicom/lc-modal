@@ -366,6 +366,10 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return (this.positionTop = this.getClientRects().top);
 	}
 
+	public changeStackOrder(index: number) {
+		this.renderer.setStyle(this.hostElementRef.nativeElement, 'z-index', index);
+	}
+
 	@HostListener('mousedown', ['$event'])
 	public setActive(event: MouseEvent): void {}
 

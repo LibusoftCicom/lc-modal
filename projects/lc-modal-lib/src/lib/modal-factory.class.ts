@@ -117,6 +117,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private _destroyFn: Function = null;
 
+	// z-index
+	private stackOrder: number = null;
+
 	private displayOverlay = true;
 
 	private isVisible = true;
@@ -163,6 +166,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * to create modal
 	 */
 	public set active(state: boolean) {
+		const isActive = this.isActive;
 		/**
 		 * toggle all other modals active state to false
 		 */
@@ -174,19 +178,22 @@ export class ModalFactory implements IModal<ModalFactory> {
 			}
 		});
 
-		const wrapperInstance = this.hostComponentWrapperRef.instance;
+		const hostInstance = this.hostComponentRef;
 		// set property isActive to child component so
 		// programers could be able to check is their component current active one
-		this.isActive = this.componentRef.isActive = wrapperInstance.isActive = state;
+		this.isActive = this.componentRef.isActive = hostInstance.isActive = state;
 		// hide or show overlay on this instance
-		wrapperInstance.displayOverlay(this.displayOverlay);
+		hostInstance.displayOverlay(this.displayOverlay);
 
 		if (state) {
 			// auto focus elements and
 			// if element is active set class active to it
-			wrapperInstance.setClass('active').autoFocus();
+			hostInstance.setClass('active');
+			if (!isActive) {
+				hostInstance.autoFocus();
+			}
 		} else {
-			wrapperInstance.removeClass('active');
+			hostInstance.removeClass('active');
 		}
 
 		/**
@@ -194,22 +201,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		 * we can't place it above all other with overlay
 		 */
 		this.preserveOverlay();
-	}
-
-	/**
-	 * only last element with overlay can have it
-	 */
-	private preserveOverlay(): void {
-		const lastIndex = this.modals.length - 1;
-
-		for (let i = lastIndex; i > -1; i--) {
-			const modal = this.modals[i];
-
-			if (modal.displayOverlay && !modal.isDestroying) {
-				modal.hostComponentRef.setClass('overlay-active');
-				return;
-			}
-		}
 	}
 
 	public overlay(enabled: boolean = true): this {
@@ -276,6 +267,145 @@ export class ModalFactory implements IModal<ModalFactory> {
 	public positionOnScreenCenter(center: boolean = true) {
 		this._positionOnScreenCenter = center;
 		return this;
+	}
+
+	public afterViewInit(fn: () => void) {
+		this._afterViewInit = fn;
+	}
+
+	/**
+	 * close modal without confirmation
+	 * also return Observable object which will notify subscriptions about successful pre closing
+	 */
+	public cancel(): Observable<void> {
+		return this.performClosing(IModalResult.Cancel, null);
+	}
+
+	/**
+	 * close modal with confirmation and custom result
+	 * also return Observable object which will notify subscriptions about successful pre closing
+	 */
+	public close(data: any, modalResult: IModalResult): Observable<void> {
+		return this.performClosing(modalResult, data);
+	}
+
+	/**
+	 * close modal with confirmation
+	 * also return Observable object which will notify subscriptions about successful pre closing
+	 */
+	public confirm(data: any): Observable<void> {
+		return this.performClosing(IModalResult.Confirm, data);
+	}
+
+	/**
+	 * toggle visibility
+	 */
+	public visible(isVisible: boolean = true): this {
+		this.isVisible = isVisible;
+		this.visibilityChanges.next(isVisible);
+		return this;
+	}
+
+		/**
+	 * Enable modal resizing
+	 */
+	public resizable(enabled: boolean = true): this {
+		if (this._fullscreen) {
+			return;
+		}
+
+		return this._resizable(enabled, true);
+	}
+
+	public get isResizable(): boolean {
+		return this._isResizable;
+	}
+
+	/**
+	 * Define component which will be opened in modal
+	 */
+	public component<T>(component: T): this {
+		this.componentFactoryRef = () => component;
+		this.componentFactory = this.cfr.resolveComponentFactory(this.componentFactoryRef());
+		this.hostComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
+		return this;
+	}
+
+	/**
+	 * set method which will remove Modal instance from
+	 * map array
+	 */
+	public setDestroyFn(fn: Function): void {
+		this._destroyFn = fn;
+	}
+
+	/**
+	 * destroy created component
+	 */
+	public destroy(force: boolean = false): void {
+		this.isDestroying = true;
+		if (force !== true) {
+			if (this.previous) {
+				this.previous.active = true;
+			} else {
+				// if there isn't any previus modal to focus
+				// use `_focusElement` element to focus it
+				if (this.modals.length === 1 && this._focusElement) {
+					try {
+						// IE/Edge -> prevent scroll to top
+						if ((<any>this._focusElement).setActive) {
+							(<any>this._focusElement).setActive();
+						} else {
+							this._focusElement.focus();
+						}
+					} catch (err) {}
+				}
+			}
+		}
+
+		if (this._destroyFn) {
+			this._destroyFn();
+		}
+
+		this.modalStatusChange.unsubscribe();
+		this.viewReadyChange.unsubscribe();
+		if (this.hostComponentWrapperRef) {
+			this.hostComponentWrapperRef.destroy();
+		}
+		this._focusElement = null;
+	}
+
+	/**
+	 * Enable modal dragging
+	 */
+	public draggable(enabled: boolean = true): this {
+		if (this._fullscreen) {
+			return;
+		}
+		return this._draggable(enabled, true);
+	}
+
+	/**
+	 * change z-index position
+	 */
+	public order(zIndex: number): void {
+		this.stackOrder = zIndex;
+	}
+
+	/**
+	 * only last element with overlay can have it
+	 */
+	private preserveOverlay(): void {
+		const lastIndex = this.modals.length - 1;
+
+		for (let i = lastIndex; i > -1; i--) {
+			const modal = this.modals[i];
+
+			if (modal.displayOverlay && !modal.isDestroying) {
+				modal.hostComponentRef.setClass('overlay-active');
+				return;
+			}
+		}
 	}
 
 	private changeClassName(className: string, add: boolean): void {
@@ -401,6 +531,16 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this._changeResizable(this._isResizable);
 		}
 
+		if (this.previous) {
+			// flag previous modal as inactive
+			this.previous.active = false;
+
+			// current active element should be focused on modal close
+			// we need to tell previous modal to use this element for focus after we close modal
+			this.previous.hostComponentRef.focusOnChange = this._focusElement;
+		}
+
+		this.isActive = true;
 		// add child component to our wrapper component instance
 		this.prepareChildComponent(hostComponentInstance);
 
@@ -428,19 +568,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this._focusElement = this.tryToFindFocusableElement();
 		}
 
-		if (this.previous) {
-			// flag previous modal as inactive
-			this.previous.active = false;
-
-			// current active element should be focused on modal close
-			// we need to tell previous modal to use this element for focus after we close modal
-			this.previous.hostComponentWrapperRef.instance.focusOnChange = this._focusElement;
-		}
-
-		changeDetectorRef.detectChanges();
-
 		// toggle status
-		this.visibilityChanges.subscribe((isVisible) => hostComponentInstance.display(isVisible));
+		this.visibilityChanges.subscribe((isVisible) => {
+			hostComponentInstance.display(isVisible);
+			this.active = isVisible;
+		});
 
 		// and set this to be active
 		this.active = true;
@@ -456,6 +588,13 @@ export class ModalFactory implements IModal<ModalFactory> {
 				this.setMinHeight(hostComponentInstance.getHeight());
 			}
 		}
+
+		if (this.stackOrder) {
+			hostComponentInstance.changeStackOrder(this.stackOrder);
+		}
+
+		changeDetectorRef.detectChanges();
+		hostComponentInstance.autoFocus();
 	}
 
 	/**
@@ -482,10 +621,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	private _afterViewInit: () => void = () => {};
-
-	public afterViewInit(fn: () => void) {
-		this._afterViewInit = fn;
-	}
 
 	/**
 	 * method try to find focusable element depending on ModalSelectors
@@ -603,39 +738,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		// set new position
 		wrapperInstance.setPosition(top, left);
-	}
-
-	/**
-	 * close modal without confirmation
-	 * also return Observable object which will notify subscriptions about successful pre closing
-	 */
-	public cancel(): Observable<void> {
-		return this.performClosing(IModalResult.Cancel, null);
-	}
-
-	/**
-	 * close modal with confirmation and custom result
-	 * also return Observable object which will notify subscriptions about successful pre closing
-	 */
-	public close(data: any, modalResult: IModalResult): Observable<void> {
-		return this.performClosing(modalResult, data);
-	}
-
-	/**
-	 * close modal with confirmation
-	 * also return Observable object which will notify subscriptions about successful pre closing
-	 */
-	public confirm(data: any): Observable<void> {
-		return this.performClosing(IModalResult.Confirm, data);
-	}
-
-	/**
-	 * toggle visibility
-	 */
-	public visible(isVisible: boolean = true): this {
-		this.isVisible = isVisible;
-		this.visibilityChanges.next(isVisible);
-		return this;
 	}
 
 	/**
@@ -950,17 +1052,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
-	/**
-	 * Enable modal dragging
-	 */
-	public draggable(enabled: boolean = true): this {
-		if (this._fullscreen) {
-			return;
-		}
-
-		return this._draggable(enabled, true);
-	}
-
 	private _resizable(enabled: boolean, saveState: boolean): this {
 		if (saveState) {
 			this._lastResizableState = enabled;
@@ -973,70 +1064,5 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this._changeResizable(this._isResizable);
 		}
 		return this;
-	}
-
-	/**
-	 * Enable modal resizing
-	 */
-	public resizable(enabled: boolean = true): this {
-		if (this._fullscreen) {
-			return;
-		}
-
-		return this._resizable(enabled, true);
-	}
-
-	/**
-	 * Define component which will be opened in modal
-	 */
-	public component<T>(component: T): this {
-		this.componentFactoryRef = () => component;
-		this.componentFactory = this.cfr.resolveComponentFactory(this.componentFactoryRef());
-		this.hostComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
-		return this;
-	}
-
-	/**
-	 * set method which will remove Modal instance from
-	 * map array
-	 */
-	public setDestroyFn(fn: Function): void {
-		this._destroyFn = fn;
-	}
-
-	/**
-	 * destroy created component
-	 */
-	public destroy(force: boolean = false): void {
-		this.isDestroying = true;
-		if (force !== true) {
-			if (this.previous) {
-				this.previous.active = true;
-			} else {
-				// if there isn't any previus modal to focus
-				// use `_focusElement` element to focus it
-				if (this.modals.length === 1 && this._focusElement) {
-					try {
-						// IE/Edge -> prevent scroll to top
-						if ((<any>this._focusElement).setActive) {
-							(<any>this._focusElement).setActive();
-						} else {
-							this._focusElement.focus();
-						}
-					} catch (err) {}
-				}
-			}
-		}
-
-		if (this._destroyFn) {
-			this._destroyFn();
-		}
-
-		this.modalStatusChange.unsubscribe();
-		this.viewReadyChange.unsubscribe();
-		if (this.hostComponentWrapperRef) {
-			this.hostComponentWrapperRef.destroy();
-		}
-		this._focusElement = null;
 	}
 }

@@ -83,54 +83,22 @@
 	background: rgba(255, 255, 255, 0.3);
 }
 
-:host(.message-box) .modal-pseudo {
-	min-width: 400px;
-}
-
-:host(.message-box) .modal-box {
-	display: block;
-	width: 400px;
-	min-width: 400px;
-	min-width: initial;
-	min-height: 160px;
-	background: #fff;
-	z-index: 40000;
-	top: 50%;
-	left: 50%;
-	bottom: auto;
-	overflow: hidden;
-	right: auto;
-	margin: -150px 0 0 -200px;
-	height: auto;
-}
-
-:host(.message-box) .modal-header,
-:host(.message-box) .modal-body {
-	text-align: center;
-}
-
-:host(.message-box) .modal-body,
-:host(.message-box) .modal-content {
-	padding: 0;
-}
-
-:host(.message-box) .close-btn {
-	color: #858f98;
-}
-
 .modal-box {
 	display: flex;
 	flex-direction: column;
 	z-index: 10001;
 }
 
+$header-height: 28px;
+
 .modal-header {
 	border-radius: 0px;
 	color: #000;
 	display: flex;
-	height: 28px;
+	height: $header-height;
 	font-size: 14px;
-	line-height: 28px;
+	justify-content: space-between;
+	line-height: $header-height;
 	padding: 0 5px 0 10px;
 	width: 100%;
 	z-index: 10;
@@ -165,7 +133,7 @@
 	}
 
 	.modal-title {
-		display: block;
+		flex: 1 1 100%;
 		line-height: 1.6rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -215,7 +183,7 @@
 
 
 .modal-body {
-	height: 100%;
+	height: calc(100% - #{$header-height});
 	padding: 0;
 	position: relative;
 
@@ -227,6 +195,44 @@
 		overflow-x: hidden;
 		padding: 10px;
 		position: relative;
+	}
+}
+
+:host(.message-box) {
+
+	.modal-pseudo {
+		min-width: 400px;
+	}
+
+	.modal-box {
+		display: block;
+		width: 400px;
+		min-width: 400px;
+		min-width: initial;
+		min-height: 160px;
+		background: #fff;
+		z-index: 40000;
+		top: 50%;
+		left: 50%;
+		bottom: auto;
+		overflow: hidden;
+		right: auto;
+		margin: -150px 0 0 -200px;
+		height: auto;
+	}
+
+	.modal-header,
+	.modal-body {
+		text-align: center;
+	}
+
+	.modal-body,
+	.modal-content {
+		padding: 0 !important;
+	}
+
+	.close-btn {
+		color: #858f98;
 	}
 }
 
