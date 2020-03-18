@@ -527,6 +527,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 			hostComponentInstance.isResizable = enabled;
 			this.detectChanges();
 		};
+
 		if (this._isResizable) {
 			this._changeResizable(this._isResizable);
 		}
@@ -577,6 +578,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		// and set this to be active
 		this.active = true;
 
+		changeDetectorRef.detectChanges();
 		this._setFullScreen(this._fullscreen);
 
 		if (!this._fullscreen) {
@@ -593,7 +595,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 			hostComponentInstance.changeStackOrder(this.stackOrder);
 		}
 
-		changeDetectorRef.detectChanges();
 		hostComponentInstance.autoFocus();
 	}
 
