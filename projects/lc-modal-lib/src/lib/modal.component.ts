@@ -377,6 +377,13 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return { height: window.innerHeight, width: window.innerWidth };
 	}
 
+	public onMouseClose(event: MouseEvent): void {
+		event.stopPropagation();
+		if (this.closeFn) {
+			this.closeFn();
+		}
+	}
+
 	@HostListener('click', ['$event'])
 	public documentCloseListener(event: MouseEvent): void {
 		const targetEl = event.target || event.srcElement;

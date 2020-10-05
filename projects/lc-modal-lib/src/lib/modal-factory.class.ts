@@ -255,9 +255,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 *
 	 * @return  confirm and cancel callbacks
 	 */
-	public open<D>(): Promise<IModalResultData<D>> {
+	public async open<D>(): Promise<IModalResultData<D>> {
 		if (!this.componentFactoryRef) {
-			return <any>Promise.reject(`Before calling open() you need to set component()`);
+			throw new Error(`Before calling open() you need to set component()`);
 		}
 
 		this.prepareComponent();

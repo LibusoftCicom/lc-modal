@@ -21,8 +21,8 @@
 			<div *ngIf="maximizeEnabled"
 				class="fa modal-header-btn maximize-btn"
 				[ngClass]="{ 'fa-window-maximize': !maximized, 'fa-window-restore': maximized }"
-				(click)="maximizeRestore()"></div>
-			<div *ngIf="closeEnabled" class="modal-header-btn close-btn" (click)="closeFn()"></div>
+				(mousedown)="maximizeRestore()"></div>
+			<div *ngIf="closeEnabled" class="modal-header-btn close-btn" (mousedown)="onMouseClose($event)"></div>
 		</div>
 	</ng-template>
 
