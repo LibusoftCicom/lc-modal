@@ -1,8 +1,7 @@
 import { Component, ViewContainerRef, ViewChild, OnInit, OnDestroy, Inject, Renderer2 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Modal } from './modal.service';
-import { Subscription } from 'rxjs';
-import { merge } from 'rxjs/operators';
+import { Subscription, merge } from 'rxjs';
 
 @Component({
 	selector: 'dialog-anchor',
@@ -25,7 +24,7 @@ export class ModalAnchor implements OnInit, OnDestroy {
 
 		if (this.view && this.body) {
 			this.subscriptions.push(
-				this.modal.openChange.pipe(merge(this.modal.closeChange)).subscribe(() => this.adjustBody())
+				merge(this.modal.openChange, this.modal.closeChange).subscribe(() => this.adjustBody())
 			);
 		}
 	}
@@ -35,9 +34,10 @@ export class ModalAnchor implements OnInit, OnDestroy {
 	}
 
 	public ngOnDestroy() {
-		this.modal.closeAll();
+		this.modal.destroyAllAsObservable();
 		this.subscriptions.forEach(subscription => subscription.unsubscribe());
 		this.subscriptions.length = 0;
+		this.modal.setViewContainerRef(null);
 	}
 
 	/**

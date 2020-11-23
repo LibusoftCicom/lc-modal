@@ -771,6 +771,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 			closingStatus.complete();
 		};
 
+		const emitCloseStatus = () => {
+			closingStatus.next();
+			closingStatus.complete();
+		};
+
 		const confirmFn = () => {
 			if (!this.modalStatusChange.isStopped) {
 				this.modalStatusChange.next({ modalResult, data });
@@ -780,11 +785,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 			// notify observer about successful pre closing
 			emitCloseStatus();
 			this.destroy();
-		};
-
-		const emitCloseStatus = () => {
-			closingStatus.next();
-			closingStatus.complete();
 		};
 
 		this.preCloseToObservable(
@@ -811,7 +811,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		data?: any,
 		emitData: boolean = true
 	): Observable<boolean> {
-		return Observable.create(observable => {
+		return new Observable(observable => {
 			const emitResult = (r: boolean) => observable.next(r);
 			const emitError = err => observable.error(err);
 
@@ -827,7 +827,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 				if (isPromise(result)) {
 					(result as Promise<boolean>).then(emitResult, emitError);
 				} else if (isObservable(result)) {
-					observable.toPromise().then(emitResult, emitError);
+					(result as Observable<boolean>).toPromise().then(emitResult, emitError);
 				} else {
 					try {
 						emitResult(result as boolean);
