@@ -55,7 +55,6 @@ export class Modal implements IModal<ModalFactory> {
 
 	private setModal() {
 		const id = this.model.counter;
-		const model = this.getDataModel(this);
 		/**
 		 * link parent model with setting reference
 		 * so we don't need to look for them each time
