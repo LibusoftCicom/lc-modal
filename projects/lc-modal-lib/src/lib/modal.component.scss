@@ -183,6 +183,10 @@ $header-height: 28px;
 
 
 .modal-body {
+	align-items: stretch;
+	display: flex;
+	flex-grow: 1;
+	flex-direction: column;
 	height: calc(100% - #{$header-height});
 	padding: 0;
 	position: relative;
