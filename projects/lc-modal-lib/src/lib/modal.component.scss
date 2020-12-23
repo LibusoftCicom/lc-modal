@@ -194,11 +194,18 @@ $header-height: 28px;
 	.modal-content {
 		background: white;
 		border: 0;
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
 		height: 100%;
 		overflow-y: auto;
 		overflow-x: hidden;
 		padding: 10px;
 		position: relative;
+
+		> * {
+			flex-grow: 1;
+		}
 	}
 }
 
