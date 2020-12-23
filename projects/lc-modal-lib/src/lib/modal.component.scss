@@ -202,10 +202,10 @@ $header-height: 28px;
 		overflow-x: hidden;
 		padding: 10px;
 		position: relative;
+	}
 
-		> * {
-			flex-grow: 1;
-		}
+	::ng-deep .modal-content > * {
+		flex-grow: 1;
 	}
 }
 
