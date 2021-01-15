@@ -75,4 +75,20 @@ export class AppComponent {
 		this.result = modalResult.data;
 		this.status = modalResult.modalResult;
 	}
+
+	public async withSizeLimitModal() {
+		const result = await this.modal
+			.title('Form modal')
+			.component(ModalComponentExample2)
+			.setHeight(370)
+			.setMaxHeight(500)
+			.setWidth(700)
+			.setMaxWidth(800)
+			.draggable(true)
+			.resizable(true)
+			.showMaximize(true)
+			.open();
+		this.result = result.data;
+		this.status = result.modalResult;
+	}
 }

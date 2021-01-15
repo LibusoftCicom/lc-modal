@@ -43,6 +43,9 @@
           <li class="list-group-item">
             <button type="button" (click)="withoutOverlayModal()" class="btn btn-primary">Without overlay</button>
           </li>
+          <li class="list-group-item">
+            <button type="button" (click)="withSizeLimitModal()" class="btn btn-primary">With size limit</button>
+          </li>
         </ul>
 
       </div>
@@ -198,8 +201,12 @@ export class ModalComponentExample extends BaseModalComponent &#123;&#125;
 this.modal
   .title('Example modal')
   .setHeight(370)
+  .setMinHeight(300)
+  .setMaxHeight(500)
   .setWidth(700)
-  .additionalParams(  &#123; &#125; || [] || String || Number || Boolean)
+  .setMinWidth(400)
+  .setMaxWidth(700)
+  .params(  &#123; &#125; || [] || String || Number || Boolean)
   .draggable(false)
   .resizable(true)
   .closeOnClick()

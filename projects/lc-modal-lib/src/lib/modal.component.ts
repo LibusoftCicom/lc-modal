@@ -39,7 +39,11 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 	private initMinHeight: number;
 
+	private initMaxHeight: number;
+
 	private initMinWidth: number;
+
+	private initMaxWidth: number;
 
 	private positionLeft: number;
 
@@ -229,6 +233,13 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight', null);
 	}
 
+	public setMaxHeight(value: number): void {
+		if (this.initMaxHeight == null) {
+			this.initMaxHeight = value;
+		}
+		this.renderer.setStyle(this.modalBox.nativeElement, 'maxHeight', value.toString() + 'px');
+	}
+
 	public width(value: number, units: string = 'px'): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'width', value.toString() + units);
 	}
@@ -247,6 +258,14 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	public clearMinWidth(): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth', null);
 	}
+
+	public setMaxWidth(value: number): void {
+		if (this.initMaxWidth == null) {
+			this.initMaxWidth = value;
+		}
+		this.renderer.setStyle(this.modalBox.nativeElement, 'maxWidth', value.toString() + 'px');
+	}
+
 	/**
 	 * @description return element height with padding and border
 	 *

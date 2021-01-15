@@ -66,14 +66,20 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private minHeight: number = null;
 
+	private maxHeight: number = null;
+
 	// method used to set height
 	private _changeHeight: (height: number) => void = null;
+	private _changeMaxHeight: (height: number) => void = null;
 
 	private _width: number = null;
 
 	private _minWidth: number = null;
 
+	private maxWidth: number = null;
+
 	private _changeMinWidth: (width: number) => void = null;
+	private _changeMaxWidth: (width: number) => void = null;
 
 	// method used to set width
 	private _changeWidth: (width: number) => void = null;
@@ -306,7 +312,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
-		/**
+	/**
 	 * Enable modal resizing
 	 */
 	public resizable(enabled: boolean = true): this {
@@ -462,7 +468,10 @@ export class ModalFactory implements IModal<ModalFactory> {
 			hostComponentInstance.closeOnClick();
 		}
 
-		hostComponentInstance.showMaximize(this.showMaximizeButton);
+		/**
+		 * showMaximize only if it is enabled and there isn't any max height or width limitation
+		 */
+		hostComponentInstance.showMaximize(this.showMaximizeButton && (this.maxWidth == null && this.maxHeight == null));
 		hostComponentInstance.maximize = this.maximizeChange;
 		hostComponentInstance.maximized = this._fullscreen;
 
@@ -473,10 +482,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		// set min height and width
 		this._changeHeight = (height: number) => hostComponentInstance.height(height);
+		this._changeMaxHeight = (height: number) => hostComponentInstance.setMaxHeight(height);
 
 		this._changeWidth = (width: number) => hostComponentInstance.width(width);
-
 		this._changeMinWidth = (width: number) => hostComponentInstance.minWidth(width);
+		this._changeMaxWidth = (width: number) => hostComponentInstance.setMaxWidth(width);
 
 		this._changeDimensions = (height: number, width: number, units: string) => {
 			hostComponentInstance.height(height, units);
@@ -492,8 +502,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 		if (this.minHeight) {
 			this.changeMinHeight(this.minHeight);
 		}
+		if (this.maxHeight) {
+			this._changeMaxHeight(this.maxHeight);
+		}
 		if (this._minWidth) {
 			this._changeMinWidth(this._minWidth);
+		}
+		if (this.maxWidth) {
+			this._changeMaxWidth(this.maxWidth);
 		}
 		if (this._dimensions) {
 			const { height, width, units } = this._dimensions;
@@ -947,6 +963,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
+	public setMaxHeight(height: number): this {
+		this.maxHeight = height;
+		if (this._changeMaxHeight && height > 0) {
+			this._changeMaxHeight(height);
+		}
+		return this;
+	}
+
 	public setWidth(width: number): this {
 		if (!this._minWidth) {
 			this.setMinWidth(width);
@@ -963,6 +987,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 		this._minWidth = width;
 		if (this._changeMinWidth && width > 0) {
 			this._changeMinWidth(width);
+		}
+		return this;
+	}
+
+	public setMaxWidth(width: number): this {
+		this.maxWidth = width;
+		if (this._changeMaxWidth && width > 0) {
+			this._changeMaxWidth(width);
 		}
 		return this;
 	}
