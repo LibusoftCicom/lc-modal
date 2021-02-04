@@ -16,10 +16,6 @@
 	background: transparent;
 }
 
-:host ::ng-deep lc-datepicker {
-	position: fixed;
-}
-
 :host(.without-overlay) {
 	height: 0;
 }
@@ -201,7 +197,6 @@ $header-height: 28px;
 		overflow-y: auto;
 		overflow-x: hidden;
 		padding: 10px;
-		position: relative;
 	}
 
 	::ng-deep .modal-content > * {
@@ -284,6 +279,4 @@ $header-height: 28px;
     }
 } */
 
-:host ::ng-deep .calendarContainer {
-	position: fixed !important;
-}
+
