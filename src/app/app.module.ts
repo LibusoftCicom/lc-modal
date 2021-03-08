@@ -1,6 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 import { AppComponent } from './app.component';
 import { ModalModule } from '@libusoftcicom/lc-modal';
@@ -14,7 +13,7 @@ import { RouterModule } from '@angular/router';
 	imports: [
 		BrowserModule,
 		FormsModule,
-		ModalModule.withComponents([ModalComponentExample, ModalComponentExample2]),
+		ModalModule,
 		RouterModule.forRoot([
 			{
 				path: 'test',

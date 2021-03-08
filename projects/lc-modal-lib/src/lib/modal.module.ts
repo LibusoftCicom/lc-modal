@@ -1,4 +1,4 @@
-import { NgModule, ANALYZE_FOR_ENTRY_COMPONENTS, ModuleWithProviders } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { Modal } from './modal.service';
@@ -25,11 +25,6 @@ export * from './modal-config.class';
 	exports: [ModalAnchor],
 	providers: [
 		{
-			provide: ANALYZE_FOR_ENTRY_COMPONENTS,
-			useValue: [ModalComponent],
-			multi: true
-		},
-		{
 			provide: ModalConfig,
 			useValue: ModalConfig
 		},
@@ -39,16 +34,4 @@ export * from './modal-config.class';
 	entryComponents: [ModalAnchor]
 })
 export class ModalModule {
-	static withComponents(components: any[]): ModuleWithProviders {
-		return {
-			ngModule: ModalModule,
-			providers: [
-				{
-					provide: ANALYZE_FOR_ENTRY_COMPONENTS,
-					useValue: [...components],
-					multi: true
-				}
-			]
-		};
-	}
 }

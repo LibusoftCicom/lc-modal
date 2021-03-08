@@ -153,9 +153,9 @@ export class ModalComponentExample extends BaseModalComponent &#123;&#125;
 
     @NgModule(
       &#123;
-        declarations: [...],
+        declarations: [..., ModalComponentExample],
         imports: [
-          ModalModule.withComponents([ModalComponentExample]),
+          ModalModule,
           ...
         ],
         providers: [...],

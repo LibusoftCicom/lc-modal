@@ -611,6 +611,13 @@ export class ModalFactory implements IModal<ModalFactory> {
 			hostComponentInstance.changeStackOrder(this.stackOrder);
 		}
 
+		/**
+		 * calculate initial position
+		 */
+		if (!this._offsetLeft && !this._offsetTop && !this._positionOnScreenCenter) {
+			this.calcInitPosition();
+		}
+
 		hostComponentInstance.autoFocus();
 	}
 

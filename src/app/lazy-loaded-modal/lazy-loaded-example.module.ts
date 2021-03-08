@@ -14,7 +14,7 @@ import { Router, RouterModule } from '@angular/router';
 	imports: [
 		FormsModule,
 		CommonModule,
-		ModalModule.withComponents([ModalComponentExample]),
+		ModalModule,
 		RouterModule.forChild([
 			{
 				path: '',

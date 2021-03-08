@@ -3,10 +3,6 @@
   "dest": "../../dist/lc-modal-lib",
   "deleteDestPath": false,
   "lib": {
-    "languageLevel": [
-      "dom",
-      "es2017"
-    ],
     "entryFile": "src/lc-modal.ts"
   }
 }

@@ -24,7 +24,8 @@
 							"src/styles.css",
 							"node_modules/font-awesome/css/font-awesome.css"
 						],
-						"scripts": []
+						"scripts": [],
+						"aot": true
 					},
 					"configurations": {
 						"production": {
@@ -39,10 +40,15 @@
 							"sourceMap": false,
 							"extractCss": true,
 							"namedChunks": false,
-							"aot": true,
 							"extractLicenses": true,
 							"vendorChunk": false,
-							"buildOptimizer": true
+							"buildOptimizer": true,
+							"budgets": [
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "6kb"
+								}
+							]
 						}
 					}
 				},
@@ -118,7 +124,8 @@
 					},
 					"configurations": {
 						"production": {
-							"project": "projects/lc-modal-lib/ng-package.prod.json"
+							"project": "projects/lc-modal-lib/ng-package.prod.json",
+							"tsConfig": "projects/lc-modal-lib/tsconfig.lib.prod.json"
 						}
 					}
 				},
