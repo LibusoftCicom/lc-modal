@@ -21,8 +21,7 @@
 						"assets": ["src/favicon.ico", "src/assets/logo.png", "src/assets"],
 						"styles": [
 							"node_modules/bootstrap/dist/css/bootstrap.min.css",
-							"src/styles.css",
-							"node_modules/font-awesome/css/font-awesome.css"
+							"src/styles.css"
 						],
 						"scripts": [],
 						"aot": true
@@ -38,7 +37,6 @@
 							"optimization": true,
 							"outputHashing": "all",
 							"sourceMap": false,
-							"extractCss": true,
 							"namedChunks": false,
 							"extractLicenses": true,
 							"vendorChunk": false,
