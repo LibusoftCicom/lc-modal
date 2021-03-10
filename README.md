@@ -44,9 +44,9 @@ Register ModalModule in NgModule with components that are opened in modal:
 
   @NgModule(
     {
-      declarations: [...],
+      declarations: [..., ModalComponentExample],
       imports: [
-        ModalModule.withComponents([ModalComponentExample]),
+        ModalModule,
         ...
       ],
       providers: [...],

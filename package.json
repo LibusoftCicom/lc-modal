@@ -25,8 +25,8 @@
     "lint": "ng lint lc-modal-lib ",
     "e2e": "ng e2e",
     "copyReadme": "copy README.md .\\dist-lib\\ && copy LICENSE .\\dist-lib\\",
-    "build:lib": "rimraf dist-lib &&  ng build lc-modal-lib  --prod && npm run copyReadme",
-    "build:app": "rimraf docs && ng build lc-modal-app  --prod",
+    "build:lib": "rimraf dist-lib && ng test lc-modal-lib && ng build lc-modal-lib --prod && npm run copyReadme",
+    "build:app": "rimraf docs && ng build lc-modal-app --prod",
     "build:publish:local": "npm run build:lib && npm publish dist-lib/ --access public --registry http://localhost:4873",
     "build:publish:public": "npm run build:lib && npm publish dist-lib/ --access public"
   },

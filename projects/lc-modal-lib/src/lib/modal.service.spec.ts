@@ -52,7 +52,7 @@ describe('ModalComponentHost', () => {
 	beforeEach(async(() => {
 		TestBed.configureTestingModule({
 			providers: [],
-			imports: [ModalModule.withComponents([ModalChildComponent])],
+			imports: [ModalModule],
 			declarations: [ModalComponentHost, ModalChildComponent]
 		})
 			.compileComponents()
