@@ -28,8 +28,10 @@
 
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <button type="button" (click)="example()" class="btn btn-primary">
-              Example modal</button>
+            <button type="button" (click)="example()" class="btn btn-primary">Example modal</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="modalExample()" class="btn btn-primary">Message box example</button>
           </li>
           <li class="list-group-item">
             <button type="button" (click)="fullScreenModal()" class="btn btn-primary">Fullscreen modal</button>
@@ -45,6 +47,9 @@
           </li>
           <li class="list-group-item">
             <button type="button" (click)="withSizeLimitModal()" class="btn btn-primary">With size limit</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="withCollapseModal()" class="btn btn-primary">With collapse enabled</button>
           </li>
         </ul>
 

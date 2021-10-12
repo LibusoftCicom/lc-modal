@@ -10,8 +10,9 @@ import {
 } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
-import { Observable, Subject, isObservable, from, BehaviorSubject } from 'rxjs';
+import { Observable, Subject, isObservable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
+import { ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -45,91 +46,17 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private preCloseFn: IPreclose = null;
 
-	private closeOnEscEnabled = true;
-
-	private showCloseButton = true;
-
-	private maximizeChange: Subject<boolean> = new Subject<boolean>();
-
-	private showMaximizeButton = false;
-
-	private closeByDocument = false;
-
 	private closeOnErrorEnabled = false;
 
 	private isActive = false;
 
-	// initial className
-	private initClassName: string = null;
-
-	private height: number = null;
-
-	private minHeight: number = null;
-
-	private maxHeight: number = null;
-
-	// method used to set height
-	private _changeHeight: (height: number) => void = null;
-	private _changeMaxHeight: (height: number) => void = null;
-
-	private _width: number = null;
-
-	private _minWidth: number = null;
-
-	private maxWidth: number = null;
-
-	private _changeMinWidth: (width: number) => void = null;
-	private _changeMaxWidth: (width: number) => void = null;
-
-	// method used to set width
-	private _changeWidth: (width: number) => void = null;
-
-	private _offsetLeft: number;
-
-	// method used to change postion to left
-	private _changeOffsetLeft: (left: number) => void = null;
-
-	private _offsetTop: number;
-
-	// method used to change postion to top
-	private _changeOffsetTop: (top: number) => void = null;
-
-	// method used to change height and width in percentage
-	private _changeDimensions: (height: number, width: number, units: string) => void = null;
-
 	private _focusElement: HTMLElement;
 
-	private _positionOnScreenCenter = false;
-
-	private _dimensions: { height: number; width: number; units: string } | null = null;
-
 	private componentReady = false;
-
-	private _fullscreen = false;
-
-	private _isDraggable = false;
-
-	private _lastDraggableState = false;
-
-	private _changeDraggable: (enabled: boolean) => void = null;
-
-	private _isResizable = false;
-
-	private _lastResizableState = false;
-
-	private _changeResizable: (enabled: boolean) => void = null;
 
 	private _previous: this = null;
 
 	private _destroyFn: Function = null;
-
-	// z-index
-	private stackOrder: number = null;
-
-	private displayOverlay = true;
-
-	private isVisible = true;
-	private visibilityChanges: BehaviorSubject<boolean> = new BehaviorSubject(this.isVisible);
 
 	/**
 	 * disable closing modal by CloseAll method,
@@ -139,6 +66,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	public isDestroying = false;
 
+	private readonly configuration: ModalConfiguration = new ModalConfiguration();
+
 	constructor(
 		private cfr: ComponentFactoryResolver,
 		private viewContainerRef: ViewContainerRef,
@@ -146,15 +75,10 @@ export class ModalFactory implements IModal<ModalFactory> {
 		private injector: Injector,
 		private modals: ModalFactory[],
 		private config: ModalConfig
-	) {
-		this.maximizeChange.subscribe(maximize => {
-			this._setFullScreen(maximize);
-		});
-	}
+	) {}
 
 	/**
 	 * @description method returns Observable when modal component view is ready
-	 * * @returns
 	 */
 	public get isReady(): Observable<void> {
 		return this.viewReadyChange.asObservable();
@@ -177,7 +101,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		 * toggle all other modals active state to false
 		 */
 		this.modals.forEach((modal) => {
-			modal.hostComponentRef.removeClass('overlay-active');
+			modal.configuration.removeClass(ModalClassNames.OVERLAY_ACTIVE);
 
 			if (modal !== this && state === true) {
 				modal.active = false;
@@ -189,17 +113,16 @@ export class ModalFactory implements IModal<ModalFactory> {
 		// programers could be able to check is their component current active one
 		this.isActive = this.componentRef.isActive = hostInstance.isActive = state;
 		// hide or show overlay on this instance
-		hostInstance.displayOverlay(this.displayOverlay);
 
 		if (state) {
 			// auto focus elements and
 			// if element is active set class active to it
-			hostInstance.setClass('active');
+			this.configuration.addClass(ModalClassNames.ACTIVE);
 			if (!isActive) {
 				hostInstance.autoFocus();
 			}
 		} else {
-			hostInstance.removeClass('active');
+			this.configuration.removeClass(ModalClassNames.ACTIVE);
 		}
 
 		/**
@@ -210,12 +133,12 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	public overlay(enabled: boolean = true): this {
-		this.displayOverlay = enabled;
+		this.configuration.setOverlayVisible(enabled);
 		return this;
 	}
 
 	public get overlayVisible(): boolean {
-		return this.displayOverlay;
+		return this.configuration.isOverlayVisible();
 	}
 
 	/**
@@ -271,7 +194,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	public positionOnScreenCenter(center: boolean = true) {
-		this._positionOnScreenCenter = center;
+		this.configuration.setPositionToScreenCenter(center);
 		return this;
 	}
 
@@ -307,8 +230,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * toggle visibility
 	 */
 	public visible(isVisible: boolean = true): this {
-		this.isVisible = isVisible;
-		this.visibilityChanges.next(isVisible);
+		this.configuration.setVisible(isVisible);
 		return this;
 	}
 
@@ -316,15 +238,28 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * Enable modal resizing
 	 */
 	public resizable(enabled: boolean = true): this {
-		if (this._fullscreen) {
+		if (this.configuration.isMaximized()) {
 			return;
 		}
-
-		return this._resizable(enabled, true);
+		this.configuration.setResizable(enabled, true);
+		return this;
 	}
 
 	public get isResizable(): boolean {
-		return this._isResizable;
+		return this.configuration.isResizable();
+	}
+
+	// TODO -> naziv nove povezat s time da all devices same
+
+	/**
+	 * Enable modal dragging
+	 */
+	public draggable(enabled: boolean = true): this {
+		if (this.configuration.isMaximized()) {
+			return;
+		}
+		this.configuration.setDraggable(enabled, true);
+		return this;
 	}
 
 	/**
@@ -382,20 +317,174 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	/**
-	 * Enable modal dragging
-	 */
-	public draggable(enabled: boolean = true): this {
-		if (this._fullscreen) {
-			return;
-		}
-		return this._draggable(enabled, true);
-	}
-
-	/**
 	 * change z-index position
 	 */
 	public order(zIndex: number): void {
-		this.stackOrder = zIndex;
+		this.configuration.setOrder(zIndex);
+	}
+
+	/**
+	 * Set element to focus after modal closes
+	 */
+	public focusOnClose(el: HTMLElement): this {
+		this._focusElement = el;
+		return this;
+	}
+
+	/**
+	 * return modal component instance
+	 */
+	public get hostComponentRef(): ModalComponent {
+		return this.hostComponentWrapperRef ? this.hostComponentWrapperRef.instance : null;
+	}
+
+	/**
+	 * @description set pre close callback function
+	 * method will be executed before modal closing
+	 */
+	public preClose<T>(fn: IPreclose<T>): this {
+		this.preCloseFn = fn;
+		return this;
+	}
+
+	/**
+	 * Set modal title
+	 */
+	public title(title: string): this {
+		this.titleValue = title;
+		return this;
+	}
+
+	/**
+	 * Show close button in right top corrner
+	 */
+	public showClose(visible: boolean): this {
+		this.configuration.setCloseButtonVisible(visible);
+		return this;
+	}
+
+	/**
+	 * Enable close button show
+	 */
+	public showMaximize(visible: boolean): this {
+		this.configuration.setMaximizeButtonVisible(visible);
+		return this;
+	}
+
+	/**
+	 * enable modal collapsing
+	 */
+	public showCollapse(visible: boolean = true): this {
+		this.configuration.setCollapseButtonVisible(visible);
+		return this;
+	}
+
+	/**
+	 * Enable close by ESC
+	 */
+	public closeOnESC(enable: boolean): this {
+		this.configuration.setCloseOnESC(enable);
+		return this;
+	}
+
+	/**
+	 * enable close on document click
+	 */
+	public closeOnClick(): this {
+		this.configuration.setClickOnDocumentClose(true);
+		return this;
+	}
+
+	/**
+	 * forward any parameters to component in modal
+	 */
+	public params(params: any): this {
+		this.paramsValue = params;
+		return this;
+	}
+
+	/**
+	 * set additional params
+	 */
+	public additionalParams(additionalParams: any): this {
+		this.additionalParamsValue = additionalParams;
+		return this;
+	}
+
+	/**
+	 * add custom css className to modal
+	 */
+	public setClass(className: string): this {
+		this.configuration.addClass(className);
+		return this;
+	}
+
+	/**
+	 * remove className from modal
+	 */
+	public removeClass(className: string): this {
+		this.configuration.removeClass(className);
+		return this;
+	}
+
+	public setHeight(height: number): this {
+		this.configuration.setHeight(height);
+		return this;
+	}
+
+	public setMinHeight(height: number): this {
+		this.configuration.setMinHeight(height);
+		return this;
+	}
+
+	public setMaxHeight(height: number): this {
+		this.configuration.setMaxHeight(height);
+		return this;
+	}
+
+	public setWidth(width: number): this {
+		this.configuration.setWidth(width);
+		return this;
+	}
+
+	public setMinWidth(width: number): this {
+		this.configuration.setMinWidth(width);
+		return this;
+	}
+
+	public setMaxWidth(width: number): this {
+		this.configuration.setMaxWidth(width);
+		return this;
+	}
+
+	public setDimensions(height: number, width: number, units: string = 'px'): this {
+		this.configuration.setDimensionUnits(units);
+		this.configuration.setHeight(height);
+		this.configuration.setWidth(width);
+		return this;
+	}
+
+	public setFullScreen(isFullscreen: boolean = true) {
+		this.configuration.setMaximized(isFullscreen);
+		return this;
+	}
+
+	public offsetLeft(left: number): this {
+		this.configuration.setLeftPosition(left);
+		return this;
+	}
+
+	public offsetTop(top: number): this {
+		this.configuration.setTopPosition(top);
+		return this;
+	}
+
+	/**
+	 * method used to force modal closing after preClose return rejection
+	 */
+	public closeOnError(): this {
+		this.closeOnErrorEnabled = true;
+		return this;
 	}
 
 	/**
@@ -407,33 +496,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 		for (let i = lastIndex; i > -1; i--) {
 			const modal = this.modals[i];
 
-			if (modal.displayOverlay && !modal.isDestroying) {
-				modal.hostComponentRef.setClass('overlay-active');
+			if (modal.configuration.isOverlayVisible() && !modal.isDestroying) {
+				modal.configuration.addClass(ModalClassNames.OVERLAY_ACTIVE);
 				return;
 			}
 		}
-	}
-
-	private changeClassName(className: string, add: boolean): void {
-		const hostComponentInstance = this.hostComponentRef;
-		if (!hostComponentInstance) {
-			return;
-		}
-
-		if (add) {
-			hostComponentInstance.setClass(className);
-		} else {
-			hostComponentInstance.removeClass(className);
-		}
-	}
-
-	private changeMinHeight(height: number): void {
-		const hostComponentInstance = this.hostComponentRef;
-		if (!hostComponentInstance) {
-			return;
-		}
-
-		hostComponentInstance.minHeight(height);
 	}
 
 	/**
@@ -450,6 +517,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		const hostComponentInstance = this.hostComponentRef;
 		const changeDetectorRef = this.hostComponentWrapperRef.changeDetectorRef;
 		hostComponentInstance['id'] = this.id;
+		hostComponentInstance.setConfiguration(this.configuration);
 
 		// (<any>hostComponentInstance).factory = this;
 
@@ -457,96 +525,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		hostComponentInstance.setTitle(this.titleValue).setCloseFn(() => this.cancel());
 
 		hostComponentInstance.setActive = () => this.active = true;
-
-		if (this.showCloseButton) {
-			hostComponentInstance.showClose();
-		}
-		if (this.closeOnEscEnabled) {
-			hostComponentInstance.closeOnESC();
-		}
-		if (this.closeByDocument) {
-			hostComponentInstance.closeOnClick();
-		}
-
-		/**
-		 * showMaximize only if it is enabled and there isn't any max height or width limitation
-		 */
-		hostComponentInstance.showMaximize(this.showMaximizeButton && (this.maxWidth == null && this.maxHeight == null));
-		hostComponentInstance.maximize = this.maximizeChange;
-		hostComponentInstance.maximized = this._fullscreen;
-
-		// initialy we don't have class-change hook that's why we save className like property
-		if (this.initClassName) {
-			hostComponentInstance.setClass(this.initClassName);
-		}
-
-		// set min height and width
-		this._changeHeight = (height: number) => hostComponentInstance.height(height);
-		this._changeMaxHeight = (height: number) => hostComponentInstance.setMaxHeight(height);
-
-		this._changeWidth = (width: number) => hostComponentInstance.width(width);
-		this._changeMinWidth = (width: number) => hostComponentInstance.minWidth(width);
-		this._changeMaxWidth = (width: number) => hostComponentInstance.setMaxWidth(width);
-
-		this._changeDimensions = (height: number, width: number, units: string) => {
-			hostComponentInstance.height(height, units);
-			hostComponentInstance.width(width, units);
-		};
-
-		if (this.height) {
-			this._changeHeight(this.height);
-		}
-		if (this._width) {
-			this._changeWidth(this._width);
-		}
-		if (this.minHeight) {
-			this.changeMinHeight(this.minHeight);
-		}
-		if (this.maxHeight) {
-			this._changeMaxHeight(this.maxHeight);
-		}
-		if (this._minWidth) {
-			this._changeMinWidth(this._minWidth);
-		}
-		if (this.maxWidth) {
-			this._changeMaxWidth(this.maxWidth);
-		}
-		if (this._dimensions) {
-			const { height, width, units } = this._dimensions;
-			this._changeDimensions(height, width, units);
-		}
-
-		// set offset positions
-		this._changeOffsetLeft = (left: number) => hostComponentInstance.setLeftPosition(left);
-
-		this._changeOffsetTop = (top: number) => hostComponentInstance.setTopPosition(top);
-
-		// if position exist use it
-		if (this._offsetLeft) {
-			this._changeOffsetLeft(this._offsetLeft);
-		}
-		if (this._offsetTop) {
-			this._changeOffsetTop(this._offsetTop);
-		}
-
-		// set draggable options
-		this._changeDraggable = (enabled: boolean) => {
-			hostComponentInstance.isDraggable = enabled;
-			this.detectChanges();
-		};
-		if (this._isDraggable) {
-			this._changeDraggable(this._isDraggable);
-		}
-
-		// set resizing
-		this._changeResizable = (enabled: boolean) => {
-			hostComponentInstance.isResizable = enabled;
-			this.detectChanges();
-		};
-
-		if (this._isResizable) {
-			this._changeResizable(this._isResizable);
-		}
 
 		if (this.previous) {
 			// flag previous modal as inactive
@@ -570,12 +548,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 				this._afterViewInit();
 			}
 			this.componentReady = true;
-
 			this.viewReadyChange.next();
 
-			// else calculate position according to previous modal
+			// calculate position according to previous modal
 			// but don't do that for messagebox
-			if (!this._offsetLeft && !this._offsetTop && !this._positionOnScreenCenter) {
+			if (this.isCalcRequired()) {
 				this.calcInitPosition();
 			}
 		};
@@ -586,39 +563,30 @@ export class ModalFactory implements IModal<ModalFactory> {
 		}
 
 		// toggle status
-		this.visibilityChanges.subscribe((isVisible) => {
-			hostComponentInstance.display(isVisible);
-			this.active = isVisible;
-		});
+		this.configuration
+			.valueChanges
+			.pipe(filter(({ type }) => type === ModalConfigurationEventType.VISIBILITY_CHANGE))
+			.subscribe(({ value }) => { this.active = value; });
 
 		// and set this to be active
 		this.active = true;
 
 		changeDetectorRef.detectChanges();
-		this._setFullScreen(this._fullscreen);
-
-		if (!this._fullscreen) {
-			if (!this._minWidth) {
-				this.setMinWidth(hostComponentInstance.getWidth());
-			}
-
-			if (!this.minHeight) {
-				this.setMinHeight(hostComponentInstance.getHeight());
-			}
-		}
-
-		if (this.stackOrder) {
-			hostComponentInstance.changeStackOrder(this.stackOrder);
-		}
 
 		/**
 		 * calculate initial position
 		 */
-		if (!this._offsetLeft && !this._offsetTop && !this._positionOnScreenCenter) {
+		if (this.isCalcRequired()) {
 			this.calcInitPosition();
 		}
 
 		hostComponentInstance.autoFocus();
+	}
+
+	private isCalcRequired(): boolean {
+		return (this.configuration.getLeftPosition() != null
+				&& this.configuration.getTopPosition() != null
+				&& !this.configuration.isPositionToScreenCenterEnabled());
 	}
 
 	/**
@@ -703,21 +671,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	/**
-	 * Set element to focus after modal closes
-	 */
-	public focusOnClose(el: HTMLElement): this {
-		this._focusElement = el;
-		return this;
-	}
-
-	/**
-	 * return modal component instance
-	 */
-	public get hostComponentRef(): ModalComponent {
-		return this.hostComponentWrapperRef ? this.hostComponentWrapperRef.instance : null;
-	}
-
-	/**
 	 * calculate position for new modal
 	 * it' can't be positioned over previous one, we need to move it right-bottom, right-top, left-bottom or left-top
 	 * but look out on bound box
@@ -730,7 +683,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		const wrapperInstance = this.hostComponentRef;
 
-		const boundbox = wrapperInstance.getBoundbox();
+		const boundbox = this.configuration.getBoundbox();
 		const height = wrapperInstance.getHeight();
 		const width = wrapperInstance.getWidth();
 
@@ -756,12 +709,12 @@ export class ModalFactory implements IModal<ModalFactory> {
 				top = move;
 			}
 		} else {
-			top = window.innerHeight / 2 - height / 2;
-			left = window.innerWidth / 2 - width / 2;
+			top = boundbox.height / 2 - height / 2;
+			left = boundbox.width / 2 - width / 2;
 		}
 
 		// set new position
-		wrapperInstance.setPosition(top, left);
+		this.configuration.setPosition(top, left);
 	}
 
 	/**
@@ -862,247 +815,5 @@ export class ModalFactory implements IModal<ModalFactory> {
 				emitResult(true);
 			}
 		});
-	}
-
-	/**
-	 * @description set pre close callback function
-	 * method will be executed before modal closing
-	 */
-	public preClose<T>(fn: IPreclose<T>): this {
-		this.preCloseFn = fn;
-		return this;
-	}
-
-	/**
-	 * Set modal title
-	 */
-	public title(title: string): this {
-		this.titleValue = title;
-		return this;
-	}
-
-	/**
-	 * Show close button in right top corrner
-	 */
-	public showClose(enable: boolean): this {
-		this.showCloseButton = enable;
-		return this;
-	}
-
-	/**
-	 * Enable close button show
-	 */
-	public showMaximize(show: boolean): this {
-		this.showMaximizeButton = show;
-		return this;
-	}
-
-	/**
-	 * Enable close by ESC
-	 */
-	public closeOnESC(enable: boolean): this {
-		this.closeOnEscEnabled = enable;
-		return this;
-	}
-
-	/**
-	 * enable close on document click
-	 */
-	public closeOnClick(): this {
-		this.closeByDocument = true;
-		return this;
-	}
-
-	/**
-	 * forward any parameters to component in modal
-	 */
-	public params(params: any): this {
-		this.paramsValue = params;
-		return this;
-	}
-
-	/**
-	 * set additional params
-	 */
-	public additionalParams(additionalParams: any): this {
-		this.additionalParamsValue = additionalParams;
-		return this;
-	}
-
-	/**
-	 * add custom css className to modal
-	 */
-	public setClass(className: string): this {
-		this.initClassName = className;
-		if (this.changeClassName && className) {
-			this.changeClassName(className, true);
-		}
-		return this;
-	}
-
-	/**
-	 * remove className from modal
-	 */
-	public removeClass(className: string): this {
-		if (this.changeClassName && className) {
-			this.changeClassName(className, false);
-		}
-		return this;
-	}
-
-	public setHeight(height: number): this {
-		if (!this.minHeight) {
-			this.setMinHeight(height);
-		}
-
-		this.height = height;
-		if (this._changeHeight && height > 0) {
-			this._changeHeight(height);
-		}
-		return this;
-	}
-
-	public setMinHeight(height: number): this {
-		this.minHeight = height;
-		if (height > 0) {
-			this.changeMinHeight(height);
-		}
-		return this;
-	}
-
-	public setMaxHeight(height: number): this {
-		this.maxHeight = height;
-		if (this._changeMaxHeight && height > 0) {
-			this._changeMaxHeight(height);
-		}
-		return this;
-	}
-
-	public setWidth(width: number): this {
-		if (!this._minWidth) {
-			this.setMinWidth(width);
-		}
-
-		this._width = width;
-		if (this._changeWidth && width > 0) {
-			this._changeWidth(width);
-		}
-		return this;
-	}
-
-	public setMinWidth(width: number): this {
-		this._minWidth = width;
-		if (this._changeMinWidth && width > 0) {
-			this._changeMinWidth(width);
-		}
-		return this;
-	}
-
-	public setMaxWidth(width: number): this {
-		this.maxWidth = width;
-		if (this._changeMaxWidth && width > 0) {
-			this._changeMaxWidth(width);
-		}
-		return this;
-	}
-
-	public setDimensions(height: number, width: number, units: string = 'px'): this {
-		this._dimensions = { height, width, units };
-		if (this._changeDimensions) {
-			if (height && width && units) {
-				this._changeDimensions(height, width, units);
-			}
-		}
-		return this;
-	}
-
-	public setFullScreen(fullscreen: boolean = true) {
-		this.maximizeChange.next(fullscreen);
-		return this;
-	}
-
-	private _setFullScreen(fullscreen: boolean) {
-		this._fullscreen = fullscreen;
-		if (this.active) {
-			fullscreen ? this.setClass('fullscreen') : this.removeClass('fullscreen');
-			this.notifyResize();
-		}
-
-		if (fullscreen) {
-			this._draggable(false, false);
-			this._resizable(false, false);
-		} else {
-			this._draggable(this._lastDraggableState, false);
-			this._resizable(this._lastResizableState, false);
-		}
-
-		return this;
-	}
-
-	private notifyResize() {
-		if (typeof CustomEvent === 'function') {
-			// modern browsers
-			window.dispatchEvent(new CustomEvent('resize'));
-		} else {
-			// for IE and other old browsers
-			// causes deprecation warning on modern browsers
-			const evt = window.document.createEvent('CustomEvent');
-			evt.initCustomEvent('resize', true, false, 0);
-			window.dispatchEvent(evt);
-		}
-	}
-
-	public offsetLeft(left: number): this {
-		this._offsetLeft = left;
-		if (this._changeOffsetLeft) {
-			this._changeOffsetLeft(left);
-		}
-		return this;
-	}
-
-	public offsetTop(top: number): this {
-		this._offsetTop = top;
-		if (this._changeOffsetTop) {
-			this._changeOffsetTop(top);
-		}
-		return this;
-	}
-
-	/**
-	 * method used to force modal closing after preClose return rejection
-	 */
-	public closeOnError(): this {
-		this.closeOnErrorEnabled = true;
-		return this;
-	}
-
-	/**
-	 * Enable modal dragging
-	 */
-	private _draggable(enabled: boolean, saveState: boolean): this {
-		if (saveState) {
-			this._lastDraggableState = enabled;
-		}
-
-		this._isDraggable = enabled;
-
-		if (this._changeDraggable) {
-			this._changeDraggable(this._isDraggable);
-		}
-		return this;
-	}
-
-	private _resizable(enabled: boolean, saveState: boolean): this {
-		if (saveState) {
-			this._lastResizableState = enabled;
-		}
-
-		this._isResizable = enabled;
-
-		this.showMaximize(true);
-		if (this._changeResizable) {
-			this._changeResizable(this._isResizable);
-		}
-		return this;
 	}
 }

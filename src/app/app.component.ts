@@ -26,6 +26,19 @@ export class AppComponent {
 		this.status = modalResult.modalResult;
 	}
 
+	public async modalExample() {
+		const modal = this.modal
+			.title('Message box example')
+			.closeOnError()
+			.positionOnScreenCenter(true)
+			.draggable(false)
+			.setClass('message-box')
+			.component(ModalComponentExample2);
+
+			modal.closeOnlyByUser = false;
+			modal.open();
+	}
+
 	public async openFormModal() {
 		const result = await this.modal
 			.title('Form modal')
@@ -87,6 +100,20 @@ export class AppComponent {
 			.draggable(true)
 			.resizable(true)
 			.showMaximize(true)
+			.open();
+		this.result = result.data;
+		this.status = result.modalResult;
+	}
+
+	public async withCollapseModal() {
+		const result = await this.modal
+			.title('Form modal')
+			.component(ModalComponentExample)
+			.draggable(true)
+			.resizable(true)
+			.overlay(false)
+			.showMaximize(true)
+			.showCollapse(true)
 			.open();
 		this.result = result.data;
 		this.status = result.modalResult;

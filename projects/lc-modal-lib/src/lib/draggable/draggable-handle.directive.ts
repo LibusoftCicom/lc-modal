@@ -39,6 +39,8 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 
 	private dragging = false;
 
+	private timeout;
+
 	private eventDestroyHooks: Function[] = [];
 
 	constructor(
@@ -91,8 +93,6 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 	public ngOnDestroy(): void {
 		this.eventDestroyHooks.forEach((destroyFn) => destroyFn());
 	}
-
-	private timeout;
 
 	@HostListener('touchstart', ['$event'])
 	@HostListener('mousedown', ['$event'])

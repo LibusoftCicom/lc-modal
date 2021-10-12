@@ -9,12 +9,15 @@ import {
 	HostListener,
 	Renderer2,
 	OnDestroy,
-	ComponentFactory
+	ComponentFactory,
+	ChangeDetectorRef
 } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { IModalDimensions } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 import { IHostModalComponent } from './modal-component.interface';
+import { ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
+import { filter } from 'rxjs/operators';
 
 @Component({
 	selector: `modal-component`,
@@ -29,38 +32,24 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	@ViewChild('modalBox', { static: true })
 	private modalBox: ElementRef;
 
-	private escCloseEnabled = false;
-
 	private closeByDocumentEnabled = false;
 
-	private hostElementRef: ElementRef;
+	private readonly hostElementRef: ElementRef;
 
 	private eventDestroyHooks: Function[] = [];
-
-	private initMinHeight: number;
-
-	private initMaxHeight: number;
-
-	private initMinWidth: number;
-
-	private initMaxWidth: number;
-
-	private positionLeft: number;
-
-	private positionTop: number;
+	private eventDestroySubscriptions: Subscription[] = [];
 
 	public title: string;
 
-	public closeEnabled = false;
+	public closeButtonEnabled = false;
 
-	public maximizeEnabled = false;
+	public maximizeButtonEnabled = false;
+
+	public collapseButtonEnabled = false;
 
 	public maximized = false;
 
-	/**
-	 * currently value is set from modal-factory
-	 */
-	public maximize: Subject<boolean>;
+	public collapsed = false;
 
 	public closeFn: () => void;
 
@@ -72,72 +61,258 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 	public focusOnChangeElement: Element = null;
 
-	public readonly resizeObserver: Subject<IModalDimensions> = new Subject();
+	private modalConfiguration: ModalConfiguration = null;
 
-	constructor(vcRef: ViewContainerRef,
-		private renderer: Renderer2, private config: ModalConfig) {
+	constructor(
+		vcRef: ViewContainerRef,
+		private readonly cdr: ChangeDetectorRef,
+		private readonly renderer: Renderer2,
+		private readonly config: ModalConfig) {
 		this.hostElementRef = vcRef.element;
 	}
 
 	public ngOnInit(): void {
-		// on resize we clear this._boundBox
-		this.eventDestroyHooks.push(
-			this.renderer.listen('window', 'resize', () => {
-
-				// recalculate new position
-				// just return all modals inside bound box
-				if (this.isDraggable) {
-					const left = this.getPositionLeft();
-					const top = this.getPositionTop();
-
-					this.setLeftPosition(left);
-					this.setTopPosition(top);
-				}
-
-				const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-
-				if (width < 600) {
-					this.clearMinHeight();
-					this.clearMinWidth();
-				} else {
-					if (this.initMinHeight != null) {
-						this.minHeight(this.initMinHeight);
-					}
-
-					if (this.initMinWidth != null) {
-						this.minWidth(this.initMinWidth);
-					}
-				}
-			})
-		);
-
-		this.maximize.asObservable().subscribe(maximized => {
-			this.maximized = maximized;
-		});
+		console.log('ngOnInit', this.modalConfiguration);
+		this.registerEventListeners();
+		this.setInitialValues();
 	}
 
 	public ngAfterViewInit(): void {
 		setTimeout(() => this.autoFocus(), 100);
+
+		/**
+		 * in case we doesn't have min width and min height:
+		 * we will have problem in case when
+		 * user manually triggers maximize and after that minimize
+		 * modal will take max width and height he can depending on window size, not the previous one
+		 */
+		if (!this.modalConfiguration.isMaximized()) {
+			if (!this.modalConfiguration.getMinWidth()) {
+				this.modalConfiguration.setMinWidth(this.getWidth());
+			}
+
+			if (!this.modalConfiguration.getMinHeight()) {
+				this.modalConfiguration.setMinHeight(this.getHeight());
+			}
+		}
 	}
 
 	public ngOnDestroy(): void {
+		this.eventDestroySubscriptions.forEach(subscription => subscription.unsubscribe());
+		this.eventDestroySubscriptions.length = 0;
 		this.eventDestroyHooks.forEach(destroyFn => destroyFn());
+		this.eventDestroyHooks.length = 0;
 		this.focusOnChangeElement = null;
+		this.modalConfiguration = null;
+	}
+
+	public setConfiguration(modalConfiguration: ModalConfiguration): void {
+		this.modalConfiguration = modalConfiguration;
+	}
+
+	public getConfiguration(): ModalConfiguration {
+		return this.modalConfiguration;
+	}
+
+	public detectChanges(): void {
+		this.cdr.markForCheck();
+		this.cdr.detectChanges();
 	}
 
 	public get headerVisible(): boolean {
 		return !!this.title;
 	}
 
-	public displayOverlay(visible: boolean = true): void {
-		if (visible !== true) {
-			this.renderer.addClass(this.hostElementRef.nativeElement, 'without-overlay');
+	private setInitialValues(): void {
+		this.display(this.modalConfiguration.isVisible());
+		this.isDraggable = this.modalConfiguration.isDraggable();
+		/**
+		 * initialy if full screen is enabled mark component as maximized
+		 */
+		if (this.modalConfiguration.isMaximized()) {
+			// to trigger class change emit this event
+			this.modalConfiguration.setMaximized(true);
 		} else {
-			this.renderer.removeClass(this.hostElementRef.nativeElement, 'without-overlay');
+			/**
+		 	 * dimension configuration
+		 	 */
+			this.height(this.modalConfiguration.getHeight());
+			this.minHeight(this.modalConfiguration.getMinHeight());
+			this.setMaxHeight(this.modalConfiguration.getMaxHeight());
+			this.width(this.modalConfiguration.getWidth());
+			this.minWidth(this.modalConfiguration.getMinWidth());
+			this.setMaxWidth(this.modalConfiguration.getMaxWidth());
 		}
+
+		this.maximizeButtonEnabled = this.modalConfiguration.isMaximizeButtonVisible();
+		this.isResizable = this.modalConfiguration.isResizable();
+		this.closeButtonEnabled = this.modalConfiguration.isCloseButtonVisible();
+		this.collapseButtonEnabled = this.modalConfiguration.isCollapseButtonVisible();
+		this.closeByDocumentEnabled = this.modalConfiguration.isClickOnDocumentCloseEnabled();
+
+		// add ionitialy defined class names
+		this.modalConfiguration.getClassNameList().forEach(className => this.changeClass(className, true));
+
+		if (!this.modalConfiguration.isPositionToScreenCenterEnabled()) {
+			if (this.modalConfiguration.getLeftPosition() != null) {
+				this.setLeftPosition(this.modalConfiguration.getLeftPosition());
+			}
+
+			if (this.modalConfiguration.getTopPosition() != null) {
+				this.setTopPosition(this.modalConfiguration.getTopPosition());
+			}
+		}
+
+		if (this.modalConfiguration.isOverlayVisible()) {
+			// trigger class change
+			this.modalConfiguration.setOverlayVisible(true);
+		}
+
+		this.changeStackOrder(this.modalConfiguration.getOrder());
 	}
 
-	public display(isVisible: boolean): void {
+	private registerEventListeners(): void {
+		// on resize we clear this._boundBox
+		this.eventDestroyHooks.push(
+			this.renderer.listen('window', 'resize', () => {
+				const configuration = this.modalConfiguration;
+
+				/**
+				 * consider only if draggable is used,
+				 * because otherwise css properties are
+				 * used to fix element into the center of page
+				 *
+				 * recalculate new position and
+				 * return all modals inside bound box
+				 */
+				if (configuration.isDraggable()) {
+					configuration.setLeftPosition(this.getPositionLeft());
+					configuration.setTopPosition(this.getPositionTop());
+				}
+
+				const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+
+				// TODO -> je li potrebno napraviti restore -> provjeriti dinamički kreirane modalne ekrane
+				if (width < 600) {
+				// 	this.modalConfiguration.clearMinSize();
+				}
+				// } else {
+				// 	// this.modalConfiguration.restoreInitialMinSize();
+				// }
+			})
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.VISIBILITY_CHANGE))
+				.subscribe(({ value }) => { this.display(value); })
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.COLLAPSE_CHANGE))
+				.subscribe(({ value }) => {
+					this.collapsed = value;
+					this.detectChanges();
+				})
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.DRAGGABLE_CHANGE))
+				.subscribe(({ value }) => {
+					this.isDraggable = value;
+					this.detectChanges();
+				})
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.RESIZABLE_CHANGE))
+				.subscribe(({ value }) => {
+					this.isResizable = value;
+					this.detectChanges();
+				})
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.FULLSCREEN_CHANGE))
+				.subscribe(({ value }) => {
+					this.maximized = value;
+
+					if (this.isActive) {
+						this.notifyResize();
+					}
+				})
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.CLASS_ADD_CHANGE
+											|| type === ModalConfigurationEventType.CLASS_REMOVE_CHANGE))
+				.subscribe(({ type, value }) =>
+					this.changeClass(value, type === ModalConfigurationEventType.CLASS_ADD_CHANGE)
+				)
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.HEIGHT_CHANGE))
+				.subscribe(({ value }) => this.height(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MIN_HEIGHT_CHANGE))
+				.subscribe(({ value }) => this.minHeight(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MAX_HEIGHT_CHANGE))
+				.subscribe(({ value }) => this.setMaxHeight(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.WIDTH_CHANGE))
+				.subscribe(({ value }) => this.width(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MIN_WIDTH_CHANGE))
+				.subscribe(({ value }) => this.minWidth(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MAX_WIDTH_CHANGE))
+				.subscribe(({ value }) => this.setMaxWidth(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.POSITION_CHANGE))
+				.subscribe(({ value }) => this.setPosition(value.top, value.left))
+		);
+	}
+
+	private display(isVisible: boolean): void {
 		if (this.hostElementRef) {
 			this.renderer.setStyle(this.hostElementRef.nativeElement, 'display', isVisible ? 'block' : 'none');
 		}
@@ -152,46 +327,20 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	}
 
 	/**
-	 * display maximize/minimize button
-	 */
-	public showMaximize(show: boolean): this {
-		this.maximizeEnabled = show;
-		return this;
-	}
-
-	/**
 	 * on double click toggle modal size
 	 */
 	public toggleMaximize() {
-		if (!this.maximizeEnabled) {
+		if (!this.maximizeButtonEnabled) {
 			return;
 		}
-
-		this.maximizeRestore();
+		this.modalConfiguration.toggleMaximize();
 	}
 
-	/**
-	 * display close button
-	 */
-	public showClose(): this {
-		this.closeEnabled = true;
-		return this;
-	}
-
-	/**
-	 * enable close by ESC
-	 */
-	public closeOnESC(): this {
-		this.escCloseEnabled = true;
-		return this;
-	}
-
-	/**
-	 * enable close by click on overlay
-	 */
-	public closeOnClick(): this {
-		this.closeByDocumentEnabled = true;
-		return this;
+	public toggleCollapse() {
+		if (!this.collapseButtonEnabled) {
+			return;
+		}
+		this.modalConfiguration.toggleCollapse();
 	}
 
 	/**
@@ -202,68 +351,48 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return this;
 	}
 
-	public setClass(className: string): this {
-		return this.changeClass(className);
-	}
-
-	public removeClass(className: string): this {
-		return this.changeClass(className, false);
-	}
-
 	public addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T> {
 		return this.contentRef.createComponent(componentFactory);
 	}
 
-	public height(value: number, units: string = 'px'): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'height', value.toString() + units);
+	private height(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'height',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public minHeight(value: number): void {
-		if (this.initMinHeight == null) {
-			this.initMinHeight = value;
-		}
-		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight', value.toString() + 'px');
+	private minHeight(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public getMinHeight() {
-		return this.initMinHeight || 0;
+	private setMaxHeight(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'maxHeight',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public clearMinHeight(): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight', null);
+	private width(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'width',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public setMaxHeight(value: number): void {
-		if (this.initMaxHeight == null) {
-			this.initMaxHeight = value;
-		}
-		this.renderer.setStyle(this.modalBox.nativeElement, 'maxHeight', value.toString() + 'px');
+	private minWidth(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public width(value: number, units: string = 'px'): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'width', value.toString() + units);
+	private setMaxWidth(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'maxWidth',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public minWidth(value: number): void {
-		if (this.initMinWidth == null) {
-			this.initMinWidth = value;
-		}
-		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth', value.toString() + 'px');
+	private setMarginTop(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'marginTop',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
-	public getMinWidth(): number {
-		return this.initMinWidth || 0;
-	}
-
-	public clearMinWidth(): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth', null);
-	}
-
-	public setMaxWidth(value: number): void {
-		if (this.initMaxWidth == null) {
-			this.initMaxWidth = value;
-		}
-		this.renderer.setStyle(this.modalBox.nativeElement, 'maxWidth', value.toString() + 'px');
+	private setMarginleft(value: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'marginLeft',
+			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
 	}
 
 	/**
@@ -292,7 +421,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	 * https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
 	 * getBoundingClientRect -> problem is because WebKit recalculate layout each time you call it
 	 */
-	public getClientRects(): ClientRect {
+	private getClientRects(): ClientRect {
 		const el = this.modalBox.nativeElement;
 		return el.getBoundingClientRect();
 	}
@@ -301,7 +430,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	 * compatible with IE
 	 * will typically force style recalc
 	 */
-	public getStyles(): CSSStyleDeclaration {
+	private getStyles(): CSSStyleDeclaration {
 		const el = this.modalBox.nativeElement;
 		return el.currentStyle || window.getComputedStyle(el, null);
 	}
@@ -309,7 +438,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	/**
 	 * get element calculated margins
 	 */
-	public getMargins(): {
+	private getMargins(): {
 		top: number;
 		left: number;
 		bottom: number;
@@ -327,7 +456,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	/**
 	 * set position relative to parent overlay
 	 */
-	public setPosition(top: number, left: number): void {
+	private setPosition(top: number, left: number): void {
 		if (top !== null) {
 			this.setTopPosition(top);
 		}
@@ -341,25 +470,19 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return this.hostElementRef.nativeElement;
 	}
 
-	public maximizeRestore() {
-		this.maximize.next(!this.maximized);
-	}
-
 	/**
 	 * set left position relative to parent overlay
 	 */
-	public setLeftPosition(left: number): void {
-		this.positionLeft = this.checkBoundBox('left', left);
-		this.renderer.setStyle(this.modalBox.nativeElement, 'left', this.positionLeft.toString() + 'px');
+	private setLeftPosition(left: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'left', left.toString() + 'px');
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginLeft', '0');
 	}
 
 	/**
 	 * set top position relative to parent overlay
 	 */
-	public setTopPosition(top: number): void {
-		this.positionTop = this.checkBoundBox('top', top);
-		this.renderer.setStyle(this.modalBox.nativeElement, 'top', this.positionTop.toString() + 'px');
+	private setTopPosition(top: number): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'top', top.toString() + 'px');
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginTop', '0');
 	}
 
@@ -367,34 +490,32 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	 * get left position relative to parent overlay
 	 */
 	public getPositionLeft(): number {
-		if (this.positionLeft != null) {
-			return this.positionLeft;
+		const position = this.modalConfiguration.getLeftPosition();
+		if (position != null) {
+			return position;
 		}
 
-		return (this.positionLeft = this.getClientRects().left);
+		return this.getClientRects().left;
 	}
 
 	/**
 	 * get top position relative to parent overlay
 	 */
 	public getPositionTop(): number {
-		if (this.positionTop != null) {
-			return this.positionTop;
+		const position = this.modalConfiguration.getTopPosition();
+		if (position != null) {
+			return position;
 		}
 
-		return (this.positionTop = this.getClientRects().top);
+		return this.getClientRects().top;
 	}
 
-	public changeStackOrder(index: number) {
+	private changeStackOrder(index: number) {
 		this.renderer.setStyle(this.hostElementRef.nativeElement, 'z-index', index);
 	}
 
 	@HostListener('mousedown', ['$event'])
 	public setActive(event: MouseEvent): void {}
-
-	public getBoundbox(): { height: number; width: number } {
-		return { height: window.innerHeight, width: window.innerWidth };
-	}
 
 	public onMouseClose(event: MouseEvent): void {
 		event.stopPropagation();
@@ -498,7 +619,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	 */
 	private checkBoundBox(dir: 'left' | 'top', position: number): number {
 		if (dir === 'left') {
-			const boundboxWidth = this.getBoundbox().width;
+			const boundboxWidth = this.modalConfiguration.getBoundbox().width;
 
 			if (position > boundboxWidth - 30) {
 				return boundboxWidth - 30;
@@ -511,7 +632,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 			return position;
 		} else {
-			const boundboxHeight = this.getBoundbox().height;
+			const boundboxHeight = this.modalConfiguration.getBoundbox().height;
 
 			if (position > boundboxHeight - 30) {
 				return boundboxHeight - 30;
@@ -668,5 +789,18 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		}
 
 		return [];
+	}
+
+	private notifyResize() {
+		if (typeof CustomEvent === 'function') {
+			// modern browsers
+			window.dispatchEvent(new CustomEvent('resize'));
+		} else {
+			// for IE and other old browsers
+			// causes deprecation warning on modern browsers
+			const evt = window.document.createEvent('CustomEvent');
+			evt.initCustomEvent('resize', true, false, 0);
+			window.dispatchEvent(evt);
+		}
 	}
 }

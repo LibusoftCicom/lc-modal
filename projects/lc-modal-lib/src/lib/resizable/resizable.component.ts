@@ -13,6 +13,7 @@ import {
 import { ModalHelper } from '../modal-helper.service';
 import { MouseEventButton } from '../draggable/draggable-handle.directive';
 import { ModalComponent } from '../modal.component';
+import { ModalClassNames } from '../modal-configuration.class';
 
 @Component({
 	selector: 'resizable',
@@ -71,13 +72,10 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			const mouseMoveFn = this.renderer.listen('document', 'mousemove', (event: MouseEvent) => this.onMouseMove(event));
-
 			const toucheMoveFn = this.renderer.listen('document', 'touchmove', (event: MouseEvent) =>
 				this.onMouseMove(event)
 			);
-
 			const mouseUpFn = this.renderer.listen('document', 'mouseup', (event: MouseEvent) => this.onMouseUp());
-
 			const toucheUpFn = this.renderer.listen('document', 'touchend', (event: MouseEvent) => this.onMouseUp());
 
 			this.eventDestroyHooks.push(mouseMoveFn);
@@ -85,7 +83,8 @@ export class Resizable implements AfterViewInit, OnDestroy {
 			this.eventDestroyHooks.push(toucheMoveFn);
 			this.eventDestroyHooks.push(toucheUpFn);
 		});
-		this.parent.height(this.parent.getHeight());
+		// TODO -> check why this setHeight is called here
+		// this.parent.getConfiguration().setHeight(this.getHeight());
 	}
 
 	public ngOnDestroy(): void {
@@ -96,6 +95,10 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		event.preventDefault();
 		event.stopPropagation();
 
+		if (this.parent.getConfiguration().isMaximized()) {
+			return;
+		}
+
 		if (this.modalHelper.viewport.width > 600 && event.button !== MouseEventButton.Secondary) {
 			this.preparePseudoEl();
 
@@ -105,27 +108,22 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	}
 
 	public onMouseUp(): void {
-		if ( this.mouseDown) {
+		if (this.mouseDown) {
 			this.modalComponentHost.nativeElement.removeChild(this.pseudoEl);
 			this.mouseDown = false;
 
 			// change sizes on parent element
 			if (this.width) {
-				this.parent.width(this.width);
+				this.parent.getConfiguration().setWidth(this.width);
 			}
 
 			if (this.height) {
-				this.parent.height(this.height);
+				this.parent.getConfiguration().setHeight(this.height);
 			}
 
 			if (this.resizing) {
 				this.onStopResizing();
 			}
-
-			this.parent.resizeObserver.next({
-				width: this.width,
-				height: this.height
-			});
 
 			this.width = this.height = 0;
 			this.resizeDirection = null;
@@ -135,19 +133,15 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	public onMouseMove(event: MouseEvent): void {
 		if (this.mouseDown) {
 			this.resizing = true;
-
-			this.parent.setClass('resizing');
-
+			this.parent.getConfiguration().addClass(ModalClassNames.RESIZING);
 			this.calcNewSize(event);
-
 			this.modalHelper.pauseEvent(event);
 		}
 	}
 
 	private onStopResizing(): void {
 		this.parent.autoFocus();
-
-		this.parent.removeClass('resizing');
+		this.parent.getConfiguration().removeClass(ModalClassNames.RESIZING);
 		this.resizing = false;
 	}
 
@@ -159,11 +153,11 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
 		if (this.resizeDirection == 'right' || this.resizeDirection == 'both') {
-			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), this.parent.getMinWidth());
+			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), this.parent.getConfiguration().getMinWidth());
 		}
 
 		if (this.resizeDirection == 'bottom' || this.resizeDirection == 'both') {
-			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), this.parent.getMinHeight());
+			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), this.parent.getConfiguration().getMinHeight());
 		}
 
 		if (this.height) {
@@ -191,8 +185,8 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		this.renderer.setStyle(this.pseudoEl, 'height', height.toString() + 'px');
 		this.renderer.setStyle(this.pseudoEl, 'width', width.toString() + 'px');
 
-		const minWidth = this.parent.getMinWidth();
-		const minHeight = this.parent.getMinHeight();
+		const minWidth = this.parent.getConfiguration().getMinWidth();
+		const minHeight = this.parent.getConfiguration().getMinHeight();
 
 		this.renderer.setStyle(this.pseudoEl, 'min-width', minWidth.toString() + 'px');
 		this.renderer.setStyle(this.pseudoEl, 'min-height', minHeight.toString() + 'px');
