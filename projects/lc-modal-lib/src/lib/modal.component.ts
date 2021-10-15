@@ -72,7 +72,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	}
 
 	public ngOnInit(): void {
-		console.log('ngOnInit', this.modalConfiguration);
 		this.registerEventListeners();
 		this.setInitialValues();
 	}
