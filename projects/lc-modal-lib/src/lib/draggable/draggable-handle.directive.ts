@@ -104,8 +104,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		this.parent.focusOnChange = document.activeElement;
 
 		// enable moving only if width is greater than 600px
-		if (
-			this.modalHelper.viewport.width > 600 &&
+		if (this.parent.isDraggingPossible() &&
 			event.button !== MouseEventButton.Secondary
 		) {
 			this.timeout = setTimeout(() => {

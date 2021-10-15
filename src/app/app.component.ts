@@ -111,9 +111,12 @@ export class AppComponent {
 			.component(ModalComponentExample)
 			.draggable(true)
 			.resizable(true)
+			.offsetLeft(52)
+			.offsetTop(83)
 			.overlay(false)
 			.showMaximize(true)
 			.showCollapse(true)
+			.preserveDesktopBehavior()
 			.open();
 		this.result = result.data;
 		this.status = result.modalResult;

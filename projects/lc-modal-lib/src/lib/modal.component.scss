@@ -259,16 +259,18 @@ $header-height: 28px;
 		cursor: default;
 	}
 
-	.modal-box {
-		bottom: 0;
-		left: 0 !important;
-		margin: auto !important;
-		max-height: 100% !important;
-		max-width: 100% !important;
-		min-width: 96% !important;
-		min-width: initial;
-		right: 0 !important;
-		top: 0 !important;
+	:host(:not(.behavior-preserved)) {
+		.modal-box {
+			bottom: 0;
+			left: 0 !important;
+			margin: auto !important;
+			max-height: 100% !important;
+			max-width: 100% !important;
+			min-width: 96% !important;
+			min-width: initial;
+			right: 0 !important;
+			top: 0 !important;
+		}
 	}
 
 	:host(.message-box) .modal-box {

@@ -188,16 +188,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 					configuration.setLeftPosition(this.getPositionLeft());
 					configuration.setTopPosition(this.getPositionTop());
 				}
-
-				const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-
-				// TODO -> je li potrebno napraviti restore -> provjeriti dinamički kreirane modalne ekrane
-				if (width < 600) {
-				// 	this.modalConfiguration.clearMinSize();
-				}
-				// } else {
-				// 	// this.modalConfiguration.restoreInitialMinSize();
-				// }
 			})
 		);
 

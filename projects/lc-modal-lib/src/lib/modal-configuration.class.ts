@@ -12,6 +12,7 @@ export enum ModalConfigurationEventType {
 	DRAGGABLE_CHANGE,
 	RESIZABLE_CHANGE,
 	FULLSCREEN_CHANGE,
+	DESKTOP_BEHAVIOR_CHANGE,
 
 	HEIGHT_CHANGE,
 	MIN_HEIGHT_CHANGE,
@@ -35,7 +36,8 @@ export enum ModalClassNames {
 	ACTIVE = 'active',
 	OVERLAY_ACTIVE = 'overlay-active',
 	RESIZING = 'resizing',
-	COLLAPSED = 'collapsed'
+	COLLAPSED = 'collapsed',
+	BEHAVIOR_PRESERVED = 'behavior-preserved'
 }
 
 export interface IModalDimensions {
@@ -77,6 +79,8 @@ export class ModalConfiguration {
 
 	private classNameList: Set<string> = new Set();
 
+	private desktopBehaviorPreserved = false;
+
 	/**
 	 * buttons
 	 */
@@ -114,9 +118,9 @@ export class ModalConfiguration {
 	/**
 	 * positions
 	 */
-	private leftPosition = 0;
+	private leftPosition = null;
 
-	private topPosition = 0;
+	private topPosition = null;
 
 	/**
 	 * z-index
@@ -351,6 +355,17 @@ export class ModalConfiguration {
 
 	public getClassNameList(): string[] {
 		return Array.from(this.classNameList.values());
+	}
+
+	public isDesktopBehaviorPreserved(): boolean {
+		return this.desktopBehaviorPreserved;
+	}
+
+	public setPreserveDesktopBehavior(isPreserved: boolean = true): void {
+		this.desktopBehaviorPreserved = isPreserved;
+		isPreserved ? this.addClass(ModalClassNames.BEHAVIOR_PRESERVED)
+						: this.removeClass(ModalClassNames.BEHAVIOR_PRESERVED);
+		this.valueChanged.next({ type: ModalConfigurationEventType.DESKTOP_BEHAVIOR_CHANGE, value: isPreserved });
 	}
 
 	// #region dimensions
@@ -591,7 +606,7 @@ export class ModalConfiguration {
 			const boundboxWidth = this.getBoundbox().width;
 
 			// on mobile move element to center
-			if (boundboxWidth < 760) {
+			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved) {
 				const elWidth = this.getWidth() || this.getMinWidth();
 				return (boundboxWidth / 2) - (elWidth / 2);
 			}
@@ -604,8 +619,9 @@ export class ModalConfiguration {
 				return boundboxWidth - 30;
 			}
 
-			const n = 0 - this.getWidth() + 60;
-			if (position < n) {
+			// 90px is button width
+			const n = 0 - this.getWidth() + 90;
+			if (position < n && this.getWidth() != null) {
 				return n;
 			}
 
@@ -615,7 +631,7 @@ export class ModalConfiguration {
 			const boundboxHeight = boundbox.height;
 
 			// on mobile move element to center
-			if (boundbox.width < 760) {
+			if (boundbox.width < 760 && !this.desktopBehaviorPreserved) {
 				const elHeight = this.getHeight() || this.getMinHeight();
 				return (boundboxHeight / 2) - (elHeight / 2);
 			}

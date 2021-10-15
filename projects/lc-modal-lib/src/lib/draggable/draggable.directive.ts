@@ -1,4 +1,5 @@
 import { Directive, Optional, Host, SkipSelf, ElementRef } from '@angular/core';
+import { ModalHelper } from './../modal-helper.service';
 import { ModalClassNames } from '../modal-configuration.class';
 import { ModalComponent } from '../modal.component';
 
@@ -8,7 +9,8 @@ export class Draggable {
 		@Optional()
 		@Host()
 		@SkipSelf()
-		private parent: ModalComponent
+		private parent: ModalComponent,
+		private modalHelper: ModalHelper
 	) { }
 
 	public isActive(): boolean {
@@ -60,5 +62,10 @@ export class Draggable {
 
 	public set focusOnChange(el: Element) {
 		this.parent.focusOnChange = el;
+	}
+
+	public isDraggingPossible(): boolean {
+		return this.modalHelper.viewport.width > 600
+		|| this.parent.getConfiguration().isDesktopBehaviorPreserved();
 	}
 }

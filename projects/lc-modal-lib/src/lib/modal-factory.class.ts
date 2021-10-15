@@ -488,6 +488,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	/**
+	 * used to preserve desktop behavior on mobile devices,
+	 * exactly dragging, resizing and etcetera...
+	 */
+	public preserveDesktopBehavior(isPreserved: boolean = true): this {
+		this.configuration.setPreserveDesktopBehavior(isPreserved);
+		return this;
+	}
+
+	/**
 	 * only last element with overlay can have it
 	 */
 	private preserveOverlay(): void {
@@ -518,12 +527,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 		const changeDetectorRef = this.hostComponentWrapperRef.changeDetectorRef;
 		hostComponentInstance['id'] = this.id;
 		hostComponentInstance.setConfiguration(this.configuration);
-
 		// (<any>hostComponentInstance).factory = this;
-
 		// forward settings to Modal box instance
 		hostComponentInstance.setTitle(this.titleValue).setCloseFn(() => this.cancel());
-
 		hostComponentInstance.setActive = () => this.active = true;
 
 		if (this.previous) {
@@ -584,8 +590,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	private isCalcRequired(): boolean {
-		return (this.configuration.getLeftPosition() != null
-				&& this.configuration.getTopPosition() != null
+		return (this.configuration.getLeftPosition() == null
+				&& this.configuration.getTopPosition() == null
 				&& !this.configuration.isPositionToScreenCenterEnabled());
 	}
 
