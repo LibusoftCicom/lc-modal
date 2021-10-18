@@ -605,9 +605,9 @@ export class ModalConfiguration {
 		if (dir === 'left') {
 			const boundboxWidth = this.getBoundbox().width;
 
+			const elWidth = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
 			// on mobile move element to center
 			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved) {
-				const elWidth = this.getWidth() || this.getMinWidth();
 				return (boundboxWidth / 2) - (elWidth / 2);
 			}
 
@@ -620,8 +620,8 @@ export class ModalConfiguration {
 			}
 
 			// 90px is button width
-			const n = 0 - this.getWidth() + 90;
-			if (position < n && this.getWidth() != null) {
+			const n = 0 - elWidth + 90;
+			if (position < n && elWidth != null) {
 				return n;
 			}
 
@@ -629,12 +629,12 @@ export class ModalConfiguration {
 		} else {
 			const boundbox = this.getBoundbox();
 			const boundboxHeight = boundbox.height;
+			const elHeight = this.getHeight() || this.getMaxHeight() || this.getMinHeight();
 
 			/**
 			 * on mobile devices move element to center, but do not go under 0px
 			 */
 			if (boundbox.width < 760 && !this.desktopBehaviorPreserved) {
-				const elHeight = this.getHeight() || this.getMaxHeight() || this.getMinHeight();
 				const newPosition = (boundboxHeight / 2) - (elHeight / 2);
 				if (newPosition < 0) {
 					return 0;
