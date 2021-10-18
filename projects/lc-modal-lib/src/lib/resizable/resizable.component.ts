@@ -13,7 +13,7 @@ import {
 import { ModalHelper } from '../modal-helper.service';
 import { MouseEventButton } from '../draggable/draggable-handle.directive';
 import { ModalComponent } from '../modal.component';
-import { ModalClassNames } from '../modal-configuration.class';
+import { ModalClassNames, ModalDimensionUnits } from '../modal-configuration.class';
 
 @Component({
 	selector: 'resizable',
@@ -114,11 +114,11 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 			// change sizes on parent element
 			if (this.width) {
-				this.parent.getConfiguration().setWidth(this.width);
+				this.parent.getConfiguration().setWidth({ value: this.width, units: ModalDimensionUnits.PIXEL });
 			}
 
 			if (this.height) {
-				this.parent.getConfiguration().setHeight(this.height);
+				this.parent.getConfiguration().setHeight({ value: this.height, units: ModalDimensionUnits.PIXEL });
 			}
 
 			if (this.resizing) {
@@ -152,12 +152,14 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	private calcNewSize(event: MouseEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
-		if (this.resizeDirection == 'right' || this.resizeDirection == 'both') {
-			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), this.parent.getConfiguration().getMinWidth());
+		if (this.resizeDirection === 'right' || this.resizeDirection === 'both') {
+			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(),
+			this.parent.getConfiguration().getMinWidth().value);
 		}
 
-		if (this.resizeDirection == 'bottom' || this.resizeDirection == 'both') {
-			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), this.parent.getConfiguration().getMinHeight());
+		if (this.resizeDirection === 'bottom' || this.resizeDirection === 'both') {
+			this.height = Math.max(mousePos.y - this.parent.getPositionTop(),
+			this.parent.getConfiguration().getMinHeight().value);
 		}
 
 		if (this.height) {

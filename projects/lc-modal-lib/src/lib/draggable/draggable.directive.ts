@@ -22,9 +22,6 @@ export class Draggable {
 	}
 
 	public height(): number {
-		if (this.parent.getConfiguration().isCollapsed()) {
-			return this.parent.getConfiguration().getHeight();
-		}
 		return this.parent.getHeight();
 	}
 

@@ -427,40 +427,39 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
-	public setHeight(height: number): this {
-		this.configuration.setHeight(height);
+	public setHeight(height: number, units: string = 'px'): this {
+		this.configuration.setHeight({ value: height, units });
 		return this;
 	}
 
-	public setMinHeight(height: number): this {
-		this.configuration.setMinHeight(height);
+	public setMinHeight(height: number, units: string = 'px'): this {
+		this.configuration.setMinHeight({ value: height, units });
 		return this;
 	}
 
-	public setMaxHeight(height: number): this {
-		this.configuration.setMaxHeight(height);
+	public setMaxHeight(height: number, units: string = 'px'): this {
+		this.configuration.setMaxHeight({ value: height, units });
 		return this;
 	}
 
-	public setWidth(width: number): this {
-		this.configuration.setWidth(width);
+	public setWidth(width: number, units: string = 'px'): this {
+		this.configuration.setWidth({ value: width, units });
 		return this;
 	}
 
-	public setMinWidth(width: number): this {
-		this.configuration.setMinWidth(width);
+	public setMinWidth(width: number, units: string = 'px'): this {
+		this.configuration.setMinWidth({ value: width, units });
 		return this;
 	}
 
-	public setMaxWidth(width: number): this {
-		this.configuration.setMaxWidth(width);
+	public setMaxWidth(width: number, units: string = 'px'): this {
+		this.configuration.setMaxWidth({ value: width, units });
 		return this;
 	}
 
 	public setDimensions(height: number, width: number, units: string = 'px'): this {
-		this.configuration.setDimensionUnits(units);
-		this.configuration.setHeight(height);
-		this.configuration.setWidth(width);
+		this.configuration.setHeight({ value: height, units });
+		this.configuration.setWidth({ value: width, units });
 		return this;
 	}
 

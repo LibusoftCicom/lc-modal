@@ -24,9 +24,9 @@ export enum ModalConfigurationEventType {
 	POSITION_CHANGE
 }
 
-export interface IModalConfigurationEvent {
+export interface IModalConfigurationEvent<T = any> {
 	type: ModalConfigurationEventType;
-	value: any;
+	value: T;
 }
 
 export enum ModalClassNames {
@@ -40,16 +40,22 @@ export enum ModalClassNames {
 	BEHAVIOR_PRESERVED = 'behavior-preserved'
 }
 
+export enum ModalDimensionUnits {
+	PIXEL = 'px',
+	PERCENTAGE = '%'
+}
+
 export interface IModalDimensions {
 	height: number;
 	width: number;
 	units: string;
 }
 
-export enum ModalDimensionUnits {
-	PIXEL = 'px',
-	PERCENTAGE = '%'
+export interface IModalDimension {
+	value: number;
+	units: string;
 }
+
 
 export class ModalConfiguration {
 
@@ -93,34 +99,32 @@ export class ModalConfiguration {
 	/**
 	 * dimensions
 	 */
-	private height: number = null;
+	private height: IModalDimension = null;
 
-	private minHeight: number = null;
+	private minHeight: IModalDimension = null;
 
-	private initMinHeight: number = null;
+	private initMinHeight: IModalDimension = null;
 
-	private maxHeight: number = null;
+	private maxHeight: IModalDimension = null;
 
-	private initMaxHeight: number = null;
+	private initMaxHeight: IModalDimension = null;
 
-	private width: number = null;
+	private width: IModalDimension = null;
 
-	private minWidth: number = null;
+	private minWidth: IModalDimension = null;
 
-	private initMinWidth: number = null;
+	private initMinWidth: IModalDimension = null;
 
-	private maxWidth: number = null;
+	private maxWidth: IModalDimension = null;
 
-	private initMaxWidth: number = null;
-
-	private dimensionUnits = ModalDimensionUnits.PIXEL;
+	private initMaxWidth: IModalDimension = null;
 
 	/**
 	 * positions
 	 */
-	private leftPosition = null;
+	private leftPosition: IModalDimension = null;
 
-	private topPosition = null;
+	private topPosition: IModalDimension = null;
 
 	/**
 	 * z-index
@@ -135,8 +139,7 @@ export class ModalConfiguration {
 		maxHeight: null,
 		width: null,
 		minWidth: null,
-		maxWidth: null,
-		dimensionUnits: ModalDimensionUnits.PIXEL
+		maxWidth: null
 	};
 
 	private valueChanged: Subject<IModalConfigurationEvent> = new Subject();
@@ -144,7 +147,6 @@ export class ModalConfiguration {
 	public readonly valueChanges: Observable<IModalConfigurationEvent> = this.valueChanged.asObservable();
 
 	constructor() {
-
 	}
 
 	public getBoundbox(): { height: number; width: number } {
@@ -238,13 +240,12 @@ export class ModalConfiguration {
 		if (isFullScreen) {
 			this.setDraggable(false, false);
 			this.setResizable(false, false);
-			this.setDimensionUnits(ModalDimensionUnits.PERCENTAGE, false);
-			this.setMaxHeight(100, false);
+			this.setMaxHeight({ value: 100, units: ModalDimensionUnits.PERCENTAGE }, false);
 			if (!this.isCollapsed()) {
-				this.setMinHeight(100, false);
+				this.setMinHeight({ value: 100, units: ModalDimensionUnits.PERCENTAGE }, false);
 			}
-			this.setMinWidth(100, false);
-			this.setMaxWidth(100, false);
+			this.setMinWidth({ value: 100, units: ModalDimensionUnits.PERCENTAGE }, false);
+			this.setMaxWidth({ value: 100, units: ModalDimensionUnits.PERCENTAGE }, false);
 		} else {
 			this.restoreDraggableState();
 			this.restoreMaxHeight();
@@ -266,7 +267,6 @@ export class ModalConfiguration {
 			this.setPositionToScreenCenter(true);
 		}
 
-		this.restoreDimensionUnits();
 		isFullScreen ? this.addClass(ModalClassNames.FULLSCREEN) : this.removeClass(ModalClassNames.FULLSCREEN);
 		this.valueChanged.next({ type: ModalConfigurationEventType.FULLSCREEN_CHANGE, value: isFullScreen });
 	}
@@ -287,9 +287,8 @@ export class ModalConfiguration {
 		 * after each change
 		 */
 		if (isCollapsed) {
-			this.setDimensionUnits(ModalDimensionUnits.PIXEL, false);
-			this.setHeight(28, false);
-			this.setMinHeight(28, false);
+			this.setHeight({ value: 28, units: ModalDimensionUnits.PIXEL }, false);
+			this.setMinHeight({ value: 28, units: ModalDimensionUnits.PIXEL }, false);
 			this.setResizable(false, false);
 			this.addClass(ModalClassNames.COLLAPSED);
 		} else {
@@ -299,13 +298,11 @@ export class ModalConfiguration {
 			if (!this.isMaximized()) {
 				this.restoreResizableState();
 			} else {
-				this.setDimensionUnits(ModalDimensionUnits.PERCENTAGE, false);
-				this.setMinHeight(100, false);
+				this.setMinHeight({ value: 100, units: ModalDimensionUnits.PERCENTAGE }, false);
 			}
 			this.removeClass(ModalClassNames.COLLAPSED);
 		}
 
-		this.restoreDimensionUnits();
 		this.valueChanged.next({ type: ModalConfigurationEventType.COLLAPSE_CHANGE, value: isCollapsed });
 	}
 
@@ -369,26 +366,11 @@ export class ModalConfiguration {
 	}
 
 	// #region dimensions
-	public getDimensionUnits(): string {
-		return this.dimensionUnits;
-	}
-
-	public setDimensionUnits(units: string = 'px', saveState: boolean = true): void {
-		this.dimensionUnits = units as ModalDimensionUnits;
-		if (saveState) {
-			this.savedState.dimensionUnits = units as ModalDimensionUnits;
-		}
-	}
-
-	public restoreDimensionUnits(): void {
-		this.setDimensionUnits(this.savedState.dimensionUnits);
-	}
-
-	public getHeight(): number {
+	public getHeight(): IModalDimension {
 		return this.height;
 	}
 
-	public setHeight(height: number, saveState: boolean = true): void {
+	public setHeight(height: IModalDimension, saveState: boolean = true): void {
 		if (!this.minHeight) {
 			this.setMinHeight(height);
 		}
@@ -398,7 +380,7 @@ export class ModalConfiguration {
 		}
 
 		this.height = height;
-		if (height > 0) {
+		if (height?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.HEIGHT_CHANGE, value: height });
 		}
 	}
@@ -407,11 +389,11 @@ export class ModalConfiguration {
 		this.setHeight(this.savedState.height);
 	}
 
-	public getMinHeight(): number {
+	public getMinHeight(): IModalDimension {
 		return this.minHeight;
 	}
 
-	public setMinHeight(height: number, saveState: boolean = true): void {
+	public setMinHeight(height: IModalDimension, saveState: boolean = true): void {
 		this.minHeight = height;
 
 		if (this.initMinHeight == null) {
@@ -422,7 +404,7 @@ export class ModalConfiguration {
 			this.savedState.minHeight = height;
 		}
 
-		if (height > 0) {
+		if (height?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.MIN_HEIGHT_CHANGE, value: height });
 		}
 	}
@@ -431,11 +413,11 @@ export class ModalConfiguration {
 		this.setMinHeight(this.savedState.minHeight);
 	}
 
-	public getMaxHeight(): number {
+	public getMaxHeight(): IModalDimension {
 		return this.maxHeight;
 	}
 
-	public setMaxHeight(height: number, saveState: boolean = true): void {
+	public setMaxHeight(height: IModalDimension, saveState: boolean = true): void {
 		this.maxHeight = height;
 
 		if (this.initMaxHeight == null) {
@@ -446,7 +428,7 @@ export class ModalConfiguration {
 			this.savedState.maxHeight = height;
 		}
 
-		if (height > 0) {
+		if (height?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.MAX_HEIGHT_CHANGE, value: height });
 		}
 	}
@@ -455,11 +437,11 @@ export class ModalConfiguration {
 		this.setMaxHeight(this.savedState.maxHeight);
 	}
 
-	public getWidth(): number {
+	public getWidth(): IModalDimension {
 		return this.width;
 	}
 
-	public setWidth(width: number, saveState: boolean = true): void {
+	public setWidth(width: IModalDimension, saveState: boolean = true): void {
 		if (!this.minWidth) {
 			this.setMinWidth(width);
 		}
@@ -469,7 +451,7 @@ export class ModalConfiguration {
 		}
 
 		this.width = width;
-		if (width > 0) {
+		if (width?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.WIDTH_CHANGE, value: width });
 		}
 	}
@@ -478,11 +460,11 @@ export class ModalConfiguration {
 		this.setWidth(this.savedState.width);
 	}
 
-	public getMinWidth(): number {
+	public getMinWidth(): IModalDimension {
 		return this.minWidth;
 	}
 
-	public setMinWidth(width: number, saveState: boolean = true): void {
+	public setMinWidth(width: IModalDimension, saveState: boolean = true): void {
 		this.minWidth = width;
 
 		if (this.initMinWidth == null) {
@@ -493,7 +475,7 @@ export class ModalConfiguration {
 			this.savedState.minWidth = width;
 		}
 
-		if (width > 0) {
+		if (width?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.MIN_WIDTH_CHANGE, value: width });
 		}
 	}
@@ -502,11 +484,11 @@ export class ModalConfiguration {
 		this.setMinWidth(this.savedState.minWidth);
 	}
 
-	public getMaxWidth(): number {
+	public getMaxWidth(): IModalDimension {
 		return this.maxWidth;
 	}
 
-	public setMaxWidth(width: number, saveState: boolean = true): void {
+	public setMaxWidth(width: IModalDimension, saveState: boolean = true): void {
 		this.maxWidth = width;
 
 		if (this.initMaxWidth == null) {
@@ -517,7 +499,7 @@ export class ModalConfiguration {
 			this.savedState.maxWidth = width;
 		}
 
-		if (width > 0) {
+		if (width?.value > 0) {
 			this.valueChanged.next({ type: ModalConfigurationEventType.MAX_WIDTH_CHANGE, value: width });
 		}
 	}
@@ -543,27 +525,27 @@ export class ModalConfiguration {
 	// #endregion
 
 	// #region position
-	public getLeftPosition(): number {
+	public getLeftPosition(): IModalDimension {
 		return this.leftPosition;
 	}
 
-	public setLeftPosition(left: number): void {
-		this.leftPosition = this.checkBoundBox('left', left);
+	public setLeftPosition(left: number, units: string = ModalDimensionUnits.PIXEL): void {
+		this.leftPosition = this.checkBoundBox('left', left, units);
 		this.emitPositionChanged();
 	}
 
-	public getTopPosition(): number {
+	public getTopPosition(): IModalDimension {
 		return this.topPosition;
 	}
 
-	public setTopPosition(top: number): void {
-		this.topPosition = this.checkBoundBox('top', top);
+	public setTopPosition(top: number, units: string = ModalDimensionUnits.PIXEL): void {
+		this.topPosition = this.checkBoundBox('top', top, units);
 		this.emitPositionChanged();
 	}
 
-	public setPosition(top: number, left: number): void {
-		this.topPosition = top;
-		this.leftPosition = left;
+	public setPosition(top: number, left: number, units: string = ModalDimensionUnits.PIXEL): void {
+		this.topPosition = { value: top, units };
+		this.leftPosition = { value: left, units };
 		this.emitPositionChanged();
 	}
 
@@ -574,15 +556,6 @@ export class ModalConfiguration {
 	public setOrder(order: number): void {
 		this.stackOrder = order;
 		// TODO -> implement stach order change
-	}
-
-	private setPsitionToScreenCenter(): void {
-		this.setDimensionUnits(ModalDimensionUnits.PERCENTAGE, false);
-		this.setPosition(50, 50);
-		this.restoreDimensionUnits();
-		/**
-		 * TODO -> change margin
-		 */
 	}
 
 	/**
@@ -600,15 +573,20 @@ export class ModalConfiguration {
 	 * helper method to determinate new postion according to boundbox
 	 * max width is mobile size cca 760
 	 * then move all modals to center
+	 *
+	 * TODO -> calculate depending on units size
 	 */
-	private checkBoundBox(dir: 'left' | 'top', position: number): number {
+	private checkBoundBox(dir: 'left' | 'top',
+		position: number,
+		units: string = ModalDimensionUnits.PIXEL): IModalDimension {
 		if (dir === 'left') {
 			const boundboxWidth = this.getBoundbox().width;
+			const elWidthObject = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
+			const elWidth = elWidthObject?.value;
 
-			const elWidth = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
 			// on mobile move element to center
 			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved) {
-				return (boundboxWidth / 2) - (elWidth / 2);
+				return { value: (boundboxWidth / 2) - (elWidth / 2), units: units };
 			}
 
 			/**
@@ -616,20 +594,20 @@ export class ModalConfiguration {
 			 * boundbox size
 			 */
 			if (position > boundboxWidth - 30) {
-				return boundboxWidth - 30;
+				return { value: boundboxWidth - 30, units };
 			}
 
 			// 90px is button width
 			const n = 0 - elWidth + 90;
 			if (position < n && elWidth != null) {
-				return n;
+				return { value: n, units };
 			}
 
-			return position;
+			return { value: position, units };
 		} else {
 			const boundbox = this.getBoundbox();
 			const boundboxHeight = boundbox.height;
-			const elHeight = this.getHeight() || this.getMaxHeight() || this.getMinHeight();
+			const elHeight = (this.getHeight() || this.getMaxHeight() || this.getMinHeight())?.value;
 
 			/**
 			 * on mobile devices move element to center, but do not go under 0px
@@ -637,20 +615,20 @@ export class ModalConfiguration {
 			if (boundbox.width < 760 && !this.desktopBehaviorPreserved) {
 				const newPosition = (boundboxHeight / 2) - (elHeight / 2);
 				if (newPosition < 0) {
-					return 0;
+					return { value: 0, units };
 				}
-				return newPosition;
+				return { value: newPosition, units };
 			}
 
 			if (position > boundboxHeight - 30) {
-				return boundboxHeight - 30;
+				return { value: boundboxHeight - 30, units };
 			}
 
 			if (position < 0) {
-				return 0;
+				return { value: 0, units };
 			}
 
-			return position;
+			return { value: position, units };
 		}
 	}
 	// #endregion

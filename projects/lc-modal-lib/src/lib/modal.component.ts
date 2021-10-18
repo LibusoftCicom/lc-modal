@@ -16,7 +16,7 @@ import { Subject, Subscription } from 'rxjs';
 import { IModalDimensions } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 import { IHostModalComponent } from './modal-component.interface';
-import { ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
+import { IModalConfigurationEvent, IModalDimension, ModalClassNames, ModalConfiguration, ModalConfigurationEventType, ModalDimensionUnits } from './modal-configuration.class';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -87,11 +87,11 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		 */
 		if (!this.modalConfiguration.isMaximized()) {
 			if (!this.modalConfiguration.getMinWidth()) {
-				this.modalConfiguration.setMinWidth(this.getWidth());
+				this.modalConfiguration.setMinWidth({ value: this.getWidth(), units: ModalDimensionUnits.PIXEL });
 			}
 
 			if (!this.modalConfiguration.getMinHeight()) {
-				this.modalConfiguration.setMinHeight(this.getHeight());
+				this.modalConfiguration.setMinHeight({ value: this.getHeight(), units: ModalDimensionUnits.PIXEL });
 			}
 		}
 	}
@@ -135,12 +135,12 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			/**
 		 	 * dimension configuration
 		 	 */
-			this.height(this.modalConfiguration.getHeight());
-			this.minHeight(this.modalConfiguration.getMinHeight());
-			this.setMaxHeight(this.modalConfiguration.getMaxHeight());
-			this.width(this.modalConfiguration.getWidth());
-			this.minWidth(this.modalConfiguration.getMinWidth());
-			this.setMaxWidth(this.modalConfiguration.getMaxWidth());
+			this.height(this.modalConfiguration.getHeight()?.value, this.modalConfiguration.getHeight()?.units);
+			this.minHeight(this.modalConfiguration.getMinHeight()?.value, this.modalConfiguration.getMinHeight()?.units);
+			this.setMaxHeight(this.modalConfiguration.getMaxHeight()?.value, this.modalConfiguration.getMaxHeight()?.units);
+			this.width(this.modalConfiguration.getWidth()?.value, this.modalConfiguration.getWidth()?.units);
+			this.minWidth(this.modalConfiguration.getMinWidth()?.value, this.modalConfiguration.getMinWidth()?.units);
+			this.setMaxWidth(this.modalConfiguration.getMaxWidth()?.value, this.modalConfiguration.getMaxWidth()?.units);
 		}
 
 		this.maximizeButtonEnabled = this.modalConfiguration.isMaximizeButtonVisible();
@@ -154,11 +154,15 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 		if (!this.modalConfiguration.isPositionToScreenCenterEnabled()) {
 			if (this.modalConfiguration.getLeftPosition() != null) {
-				this.setLeftPosition(this.modalConfiguration.getLeftPosition());
+				this.setLeftPosition(
+					this.modalConfiguration.getLeftPosition().value,
+					this.modalConfiguration.getLeftPosition().units);
 			}
 
 			if (this.modalConfiguration.getTopPosition() != null) {
-				this.setTopPosition(this.modalConfiguration.getTopPosition());
+				this.setTopPosition(
+					this.modalConfiguration.getTopPosition().value,
+					this.modalConfiguration.getTopPosition().units);
 			}
 		}
 
@@ -255,49 +259,50 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.HEIGHT_CHANGE))
-				.subscribe(({ value }) => this.height(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.height(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MIN_HEIGHT_CHANGE))
-				.subscribe(({ value }) => this.minHeight(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.minHeight(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MAX_HEIGHT_CHANGE))
-				.subscribe(({ value }) => this.setMaxHeight(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.setMaxHeight(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.WIDTH_CHANGE))
-				.subscribe(({ value }) => this.width(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.width(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MIN_WIDTH_CHANGE))
-				.subscribe(({ value }) => this.minWidth(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.minWidth(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.MAX_WIDTH_CHANGE))
-				.subscribe(({ value }) => this.setMaxWidth(value))
+				.subscribe(({ value }: IModalConfigurationEvent<IModalDimension>) => this.setMaxWidth(value.value, value.units))
 		);
 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.POSITION_CHANGE))
-				.subscribe(({ value }) => this.setPosition(value.top, value.left))
+				.subscribe(({ value }: IModalConfigurationEvent<{ left: IModalDimension, top: IModalDimension }>) =>
+								this.setPosition(value.top, value.left))
 		);
 	}
 
@@ -344,44 +349,44 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return this.contentRef.createComponent(componentFactory);
 	}
 
-	private height(value: number): void {
+	private height(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'height',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private minHeight(value: number): void {
+	private minHeight(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minHeight',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private setMaxHeight(value: number): void {
+	private setMaxHeight(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'maxHeight',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private width(value: number): void {
+	private width(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'width',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private minWidth(value: number): void {
+	private minWidth(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'minWidth',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private setMaxWidth(value: number): void {
+	private setMaxWidth(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'maxWidth',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private setMarginTop(value: number): void {
+	private setMarginTop(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginTop',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
-	private setMarginleft(value: number): void {
+	private setMarginleft(value: number, units: string): void {
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginLeft',
-			value != null ? value.toString() + this.modalConfiguration.getDimensionUnits() : value);
+			value != null ? value.toString() + units : value);
 	}
 
 	/**
@@ -445,13 +450,13 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	/**
 	 * set position relative to parent overlay
 	 */
-	private setPosition(top: number, left: number): void {
+	private setPosition(top: IModalDimension, left: IModalDimension): void {
 		if (top !== null) {
-			this.setTopPosition(top);
+			this.setTopPosition(top.value, top.units);
 		}
 
 		if (left !== null) {
-			this.setLeftPosition(left);
+			this.setLeftPosition(left.value, left.units);
 		}
 	}
 
@@ -462,16 +467,16 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	/**
 	 * set left position relative to parent overlay
 	 */
-	private setLeftPosition(left: number): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'left', left.toString() + 'px');
+	private setLeftPosition(left: number, units: string = ModalDimensionUnits.PIXEL): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'left', left.toString() + units);
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginLeft', '0');
 	}
 
 	/**
 	 * set top position relative to parent overlay
 	 */
-	private setTopPosition(top: number): void {
-		this.renderer.setStyle(this.modalBox.nativeElement, 'top', top.toString() + 'px');
+	private setTopPosition(top: number, units: string = ModalDimensionUnits.PIXEL): void {
+		this.renderer.setStyle(this.modalBox.nativeElement, 'top', top.toString() + units);
 		this.renderer.setStyle(this.modalBox.nativeElement, 'marginTop', '0');
 	}
 
@@ -481,7 +486,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	public getPositionLeft(): number {
 		const position = this.modalConfiguration.getLeftPosition();
 		if (position != null) {
-			return position;
+			return position?.value;
 		}
 
 		return this.getClientRects().left;
@@ -493,7 +498,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	public getPositionTop(): number {
 		const position = this.modalConfiguration.getTopPosition();
 		if (position != null) {
-			return position;
+			return position?.value;
 		}
 
 		return this.getClientRects().top;
