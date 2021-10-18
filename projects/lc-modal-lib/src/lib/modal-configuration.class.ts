@@ -630,10 +630,16 @@ export class ModalConfiguration {
 			const boundbox = this.getBoundbox();
 			const boundboxHeight = boundbox.height;
 
-			// on mobile move element to center
+			/**
+			 * on mobile devices move element to center, but do not go under 0px
+			 */
 			if (boundbox.width < 760 && !this.desktopBehaviorPreserved) {
-				const elHeight = this.getHeight() || this.getMinHeight();
-				return (boundboxHeight / 2) - (elHeight / 2);
+				const elHeight = this.getHeight() || this.getMaxHeight() || this.getMinHeight();
+				const newPosition = (boundboxHeight / 2) - (elHeight / 2);
+				if (newPosition < 0) {
+					return 0;
+				}
+				return newPosition;
 			}
 
 			if (position > boundboxHeight - 30) {

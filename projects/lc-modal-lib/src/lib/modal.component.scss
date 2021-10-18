@@ -254,12 +254,12 @@ $header-height: 28px;
 	}
 }
 
-@media handheld, screen and (max-width: 600px) {
+@media handheld, screen and (max-width: 760px) {
 	.modal-header[draggable-handle] {
 		cursor: default;
 	}
 
-	:host(:not(.behavior-preserved)) {
+	:host:not(.behavior-preserved) {
 		.modal-box {
 			bottom: 0;
 			left: 0 !important;
