@@ -585,7 +585,7 @@ export class ModalConfiguration {
 			const elWidth = elWidthObject?.value;
 
 			// on mobile move element to center
-			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved) {
+			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved && elWidth) {
 				return { value: (boundboxWidth / 2) - (elWidth / 2), units: units };
 			}
 
@@ -612,7 +612,7 @@ export class ModalConfiguration {
 			/**
 			 * on mobile devices move element to center, but do not go under 0px
 			 */
-			if (boundbox.width < 760 && !this.desktopBehaviorPreserved) {
+			if (boundbox.width < 760 && !this.desktopBehaviorPreserved && elHeight) {
 				const newPosition = (boundboxHeight / 2) - (elHeight / 2);
 				if (newPosition < 0) {
 					return { value: 0, units };

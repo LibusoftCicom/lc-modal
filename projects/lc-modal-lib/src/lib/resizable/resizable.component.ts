@@ -99,12 +99,18 @@ export class Resizable implements AfterViewInit, OnDestroy {
 			return;
 		}
 
-		if (this.modalHelper.viewport.width > 600 && event.button !== MouseEventButton.Secondary) {
+		if (this.isResizePossible() &&
+			event.button !== MouseEventButton.Secondary) {
 			this.preparePseudoEl();
 
 			this.mouseDown = true;
 			this.resizeDirection = direction;
 		}
+	}
+
+	private isResizePossible(): boolean {
+		return this.modalHelper.viewport.width > 600
+		|| this.parent.getConfiguration().isDesktopBehaviorPreserved();
 	}
 
 	public onMouseUp(): void {
