@@ -544,8 +544,8 @@ export class ModalConfiguration {
 	}
 
 	public setPosition(top: number, left: number, units: string = ModalDimensionUnits.PIXEL): void {
-		this.topPosition = { value: top, units };
-		this.leftPosition = { value: left, units };
+		this.topPosition = top != null ? { value: top, units } : null;
+		this.leftPosition = left != null ? { value: left, units } : null;
 		this.emitPositionChanged();
 	}
 
@@ -578,7 +578,11 @@ export class ModalConfiguration {
 	 */
 	private checkBoundBox(dir: 'left' | 'top',
 		position: number,
-		units: string = ModalDimensionUnits.PIXEL): IModalDimension {
+		units: string = ModalDimensionUnits.PIXEL): IModalDimension | null {
+		if (position == null) {
+			return null;
+		}
+
 		if (dir === 'left') {
 			const boundboxWidth = this.getBoundbox().width;
 			const elWidthObject = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
