@@ -18,6 +18,11 @@ export * from './resizable/resizable.component';
 export * from './modal-helper.service';
 export * from './modal-factory.class';
 export * from './modal-config.class';
+export {
+	ModalConfigurationEventType,
+	IModalConfigurationEvent,
+	ModalDimensionUnits
+} from './modal-configuration.class';
 
 @NgModule({
 	imports: [CommonModule],
