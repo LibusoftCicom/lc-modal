@@ -12,7 +12,7 @@ import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
-import { ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
+import { IModalDimension, ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -473,9 +473,17 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
+	public getOffsetLeft(): IModalDimension | null {
+		return this.configuration.getLeftPosition() != null ? {...this.configuration.getLeftPosition()} : null;
+	}
+
 	public offsetTop(top: number): this {
 		this.configuration.setTopPosition(top);
 		return this;
+	}
+
+	public getOffsetTop(): IModalDimension | null {
+		return this.configuration.getTopPosition() != null ? {...this.configuration.getTopPosition()} : null;
 	}
 
 	/**

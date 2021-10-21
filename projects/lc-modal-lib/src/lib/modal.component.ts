@@ -122,6 +122,59 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return !!this.title;
 	}
 
+	/**
+	 * Set modal title
+	 */
+	 public setTitle(title: string): this {
+		this.title = title;
+		return this;
+	}
+
+	/**
+	 * on double click toggle modal size
+	 */
+	public toggleMaximize() {
+		if (!this.maximizeButtonEnabled) {
+			return;
+		}
+		this.modalConfiguration.toggleMaximize();
+	}
+
+	public toggleCollapse() {
+		if (!this.collapseButtonEnabled) {
+			return;
+		}
+		this.modalConfiguration.toggleCollapse();
+	}
+
+	/**
+	 * set method used on CLOSE button
+	 */
+	public setCloseFn(fn: () => void): this {
+		this.closeFn = fn;
+		return this;
+	}
+
+	public addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T> {
+		return this.contentRef.createComponent(componentFactory);
+	}
+
+	public getControlsWidth(): null | string {
+		let width = 0;
+
+		if (this.closeButtonEnabled) {
+			width += 28;
+		}
+		if (this.maximizeButtonEnabled) {
+			width += 28;
+		}
+		if (this.collapseButtonEnabled) {
+			width += 28;
+		}
+
+		return width === 0 ? null : width + 'px';
+	}
+
 	private setInitialValues(): void {
 		this.display(this.modalConfiguration.isVisible());
 		this.isDraggable = this.modalConfiguration.isDraggable();
@@ -310,43 +363,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		if (this.hostElementRef) {
 			this.renderer.setStyle(this.hostElementRef.nativeElement, 'display', isVisible ? 'block' : 'none');
 		}
-	}
-
-	/**
-	 * Set modal title
-	 */
-	public setTitle(title: string): this {
-		this.title = title;
-		return this;
-	}
-
-	/**
-	 * on double click toggle modal size
-	 */
-	public toggleMaximize() {
-		if (!this.maximizeButtonEnabled) {
-			return;
-		}
-		this.modalConfiguration.toggleMaximize();
-	}
-
-	public toggleCollapse() {
-		if (!this.collapseButtonEnabled) {
-			return;
-		}
-		this.modalConfiguration.toggleCollapse();
-	}
-
-	/**
-	 * set method used on CLOSE button
-	 */
-	public setCloseFn(fn: () => void): this {
-		this.closeFn = fn;
-		return this;
-	}
-
-	public addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T> {
-		return this.contentRef.createComponent(componentFactory);
 	}
 
 	private height(value: number, units: string): void {
