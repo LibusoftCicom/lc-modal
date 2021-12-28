@@ -706,11 +706,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 			const previousLeft = previousWrapperInstance.getPositionLeft();
 			const previousTop = previousWrapperInstance.getPositionTop();
 
-			// if we can move it to left
+			// if we can move it to right
 			if (previousLeft + width + move < boundbox.width) {
 				left = previousLeft + move;
 			} else {
-				// else move it to the left
+				// else move it to the right
 				left = move;
 			}
 
@@ -718,13 +718,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 			if (previousTop + height + move < boundbox.height) {
 				top = previousTop + move;
 			} else {
-				// move it to up
+				// move it to down
 				top = move;
 			}
 		} else {
 			top = boundbox.height / 2 - height / 2;
 			left = boundbox.width / 2 - width / 2;
 		}
+
+		top = top < 0 ? 0 : top;
 
 		// set new position
 		this.configuration.setPosition(top, left);
