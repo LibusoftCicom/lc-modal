@@ -3,16 +3,13 @@ import {
 	ElementRef,
 	Renderer2,
 	ChangeDetectionStrategy,
-	Optional,
-	Host,
-	SkipSelf,
 	AfterViewInit,
 	OnDestroy,
 	NgZone
 } from '@angular/core';
 import { ModalHelper } from '../modal-helper.service';
 import { MouseEventButton } from '../draggable/draggable-handle.directive';
-import { ModalComponent } from '../modal.component';
+import type { ModalComponent } from '../modal.component';
 import { ModalClassNames, ModalDimensionUnits } from '../modal-configuration.class';
 
 @Component({
@@ -56,16 +53,13 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 	private resizing = false;
 
+	private parent: ModalComponent = null;
+
 	constructor(
-		@Optional()
-		@Host()
-		@SkipSelf()
-		private parent: ModalComponent,
 		private renderer: Renderer2,
 		private modalHelper: ModalHelper,
 		private zone: NgZone
 	) {
-		this.modalComponentHost = <ElementRef>(<any>parent).hostElementRef;
 	}
 
 	public ngAfterViewInit() {
@@ -89,6 +83,13 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 	public ngOnDestroy(): void {
 		this.eventDestroyHooks.forEach(destroyFn => destroyFn());
+		this.parent = null;
+		this.modalComponentHost = null;
+	}
+
+	public setParent(parent: ModalComponent): void {
+		this.parent = parent;
+		this.modalComponentHost = parent.getHostElementRef();
 	}
 
 	public onMousedown(event: MouseEvent, direction: 'right' | 'bottom' | 'both'): void {

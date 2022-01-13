@@ -555,7 +555,7 @@ export class ModalConfiguration {
 
 	public setOrder(order: number): void {
 		this.stackOrder = order;
-		// TODO -> implement stach order change
+		// TODO -> implement stack order change
 	}
 
 	/**

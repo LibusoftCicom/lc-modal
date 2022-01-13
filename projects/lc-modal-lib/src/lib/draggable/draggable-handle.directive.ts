@@ -92,6 +92,8 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 
 	public ngOnDestroy(): void {
 		this.eventDestroyHooks.forEach((destroyFn) => destroyFn());
+		this.parent =
+		this.modalComponentHost = null;
 	}
 
 	@HostListener('touchstart', ['$event'])
@@ -159,7 +161,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		this.parent.autoFocus();
 		// resetirat fokus element možemo iz razloga što je ovo
 		// zadnje otvoreni modal
-		this.parent.focusOnChange = null;
+		// this.parent.focusOnChange = null;
 
 		this.parent.removeClass();
 		this.dragging = false;

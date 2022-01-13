@@ -10,27 +10,44 @@ import {
 	Renderer2,
 	OnDestroy,
 	ComponentFactory,
-	ChangeDetectorRef
+	ChangeDetectorRef,
+	AfterContentInit
 } from '@angular/core';
-import { Subject, Subscription } from 'rxjs';
-import { IModalDimensions } from './modal-types.class';
-import { ModalConfig } from './modal-config.class';
+import { Subscription } from 'rxjs';
+import { ModalConfig, MODAL_DEFAULT_SELECTOR } from './modal-config.class';
 import { IHostModalComponent } from './modal-component.interface';
-import { IModalConfigurationEvent, IModalDimension, ModalClassNames, ModalConfiguration, ModalConfigurationEventType, ModalDimensionUnits } from './modal-configuration.class';
+import {
+	IModalConfigurationEvent,
+	IModalDimension,
+	ModalConfiguration,
+	ModalConfigurationEventType,
+	ModalDimensionUnits
+} from './modal-configuration.class';
 import { filter } from 'rxjs/operators';
+import { Resizable } from './resizable/resizable.component';
+import { Draggable } from './draggable/draggable.directive';
 
 @Component({
 	selector: `modal-component`,
 	templateUrl: `./modal.component.html`,
-	styleUrls: ['./modal.component.scss']
+	styleUrls: ['./modal.component.scss'],
+	host: {
+		'tabindex': '-1'
+	}
 })
-export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostModalComponent {
+export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, OnDestroy, IHostModalComponent {
 
 	@ViewChild('content', { static: true, read: ViewContainerRef })
 	private contentRef: ViewContainerRef;
 
 	@ViewChild('modalBox', { static: true })
 	private modalBox: ElementRef;
+
+	@ViewChild(Resizable, { static: false })
+	private readonly resizableRef: Resizable | null;
+
+	@ViewChild(Draggable, { static: true })
+	private readonly draggableRef: Draggable;
 
 	private closeByDocumentEnabled = false;
 
@@ -76,6 +93,14 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		this.setInitialValues();
 	}
 
+	public ngAfterContentInit(): void {
+		if (this.resizableRef) {
+			this.resizableRef.setParent(this);
+		}
+
+		this.draggableRef.setParent(this);
+	}
+
 	public ngAfterViewInit(): void {
 		setTimeout(() => this.autoFocus(), 100);
 
@@ -105,6 +130,10 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		this.modalConfiguration = null;
 	}
 
+	public getHostElementRef(): ElementRef {
+		return this.hostElementRef;
+	}
+
 	public setConfiguration(modalConfiguration: ModalConfiguration): void {
 		this.modalConfiguration = modalConfiguration;
 	}
@@ -125,7 +154,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	/**
 	 * Set modal title
 	 */
-	 public setTitle(title: string): this {
+	public setTitle(title: string): this {
 		this.title = title;
 		return this;
 	}
@@ -186,8 +215,8 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			this.modalConfiguration.setMaximized(true);
 		} else {
 			/**
-		 	 * dimension configuration
-		 	 */
+			   * dimension configuration
+			   */
 			this.height(this.modalConfiguration.getHeight()?.value, this.modalConfiguration.getHeight()?.units);
 			this.minHeight(this.modalConfiguration.getMinHeight()?.value, this.modalConfiguration.getMinHeight()?.units);
 			this.setMaxHeight(this.modalConfiguration.getMaxHeight()?.value, this.modalConfiguration.getMaxHeight()?.units);
@@ -302,7 +331,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			this.modalConfiguration
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.CLASS_ADD_CHANGE
-											|| type === ModalConfigurationEventType.CLASS_REMOVE_CHANGE))
+					|| type === ModalConfigurationEventType.CLASS_REMOVE_CHANGE))
 				.subscribe(({ type, value }) =>
 					this.changeClass(value, type === ModalConfigurationEventType.CLASS_ADD_CHANGE)
 				)
@@ -355,7 +384,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.POSITION_CHANGE))
 				.subscribe(({ value }: IModalConfigurationEvent<{ left: IModalDimension, top: IModalDimension }>) =>
-								this.setPosition(value.top, value.left))
+					this.setPosition(value.top, value.left))
 		);
 	}
 
@@ -446,24 +475,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	}
 
 	/**
-	 * get element calculated margins
-	 */
-	private getMargins(): {
-		top: number;
-		left: number;
-		bottom: number;
-		right: number;
-	} {
-		const styles = this.getStyles();
-		const top = parseInt(styles.marginTop, 10);
-		const bottom = parseInt(styles.marginBottom, 10);
-		const left = parseInt(styles.marginLeft, 10);
-		const right = parseInt(styles.marginRight, 10);
-
-		return { top, left, bottom, right };
-	}
-
-	/**
 	 * set position relative to parent overlay
 	 */
 	private setPosition(top: IModalDimension, left: IModalDimension): void {
@@ -525,7 +536,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	}
 
 	@HostListener('mousedown', ['$event'])
-	public setActive(event: MouseEvent): void {}
+	public setActive(event: MouseEvent): void { }
 
 	public onMouseClose(event: MouseEvent): void {
 		event.stopPropagation();
@@ -558,6 +569,9 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 	public autoFocus(): void {
 		const focusOnParentClosing = this.focusOnChangeElement;
+		// else focus other elements
+		const el = this.hostElementRef.nativeElement;
+
 		if (focusOnParentClosing) {
 			if (document.activeElement === focusOnParentClosing) {
 				return;
@@ -568,10 +582,10 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 				return;
 			}
 			this.invokeElementMethod(document.activeElement, 'blur');
+			// preserve focus on modal content
+			this.invokeElementMethod(el, 'focus');
 		}
 
-		// else focus other elements
-		const el = this.hostElementRef.nativeElement;
 		// Browser's (Chrome 40, Forefix 37, IE 11) don't appear to honor
 		// autofocus on the dialog, but we should
 		const autoFocusEl = (<HTMLElement>el).querySelector(this.config.AutoFocusSelectors);
@@ -586,7 +600,15 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			// Autofocus element might was display: none, so let's continue
 		}
 
-		const focusableElements = this.filterAllowed(el);
+		let focusableElements = this.filterAllowed(el);
+
+		/**
+		 * in case we ignored all elements, and there
+		 * are readonly inputs we should try to focus them anyway
+		 */
+		if (focusableElements.length === 0) {
+			focusableElements = this.filterAllowed(el, this.getDefaultFocusableElements(el));
+		}
 
 		if (focusableElements.length > 0) {
 			this.handleFocus(focusableElements[0]);
@@ -595,6 +617,8 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 		// if there is nothing to focus we should at least move focus from active element
 		this.invokeElementMethod(document.activeElement, 'blur');
+		// preserve focus on modal content
+		this.invokeElementMethod(el, 'focus');
 	}
 
 	@HostListener('keydown', ['$event'])
@@ -624,38 +648,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		return this;
 	}
 
-	/**
-	 * helper method to determinate new postion according to boundbox
-	 */
-	private checkBoundBox(dir: 'left' | 'top', position: number): number {
-		if (dir === 'left') {
-			const boundboxWidth = this.modalConfiguration.getBoundbox().width;
-
-			if (position > boundboxWidth - 30) {
-				return boundboxWidth - 30;
-			}
-
-			const n = 0 - this.getWidth() + 60;
-			if (position < n) {
-				return n;
-			}
-
-			return position;
-		} else {
-			const boundboxHeight = this.modalConfiguration.getBoundbox().height;
-
-			if (position > boundboxHeight - 30) {
-				return boundboxHeight - 30;
-			}
-
-			if (position < 0) {
-				return 0;
-			}
-
-			return position;
-		}
-	}
-
 	private invokeElementMethod(element: any, methodName: string): void {
 		if (methodName === 'focus' && element.setActive) {
 			element.setActive();
@@ -669,10 +661,17 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 	private handleTabKey(event: KeyboardEvent, backward: boolean): void {
 		const el = this.hostElementRef.nativeElement;
 
-		const focusableElements = this.filterAllowed(el);
+		let focusableElements = this.filterAllowed(el);
+
+		if (focusableElements.length === 0) {
+			focusableElements = this.filterAllowed(el, this.getDefaultFocusableElements(el));
+		}
+
 		if (focusableElements.length === 0) {
 			if (document.activeElement) {
 				this.invokeElementMethod(document.activeElement, 'blur');
+				// preserve focus on modal content
+				this.invokeElementMethod(el, 'focus');
 			}
 			return;
 		}
@@ -744,7 +743,7 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 		}
 	}
 
-	private getFocusableElements(element: HTMLElement): Element[] {
+	private getFocusableElements(element: HTMLElement): NodeListOf<Element> {
 		// ako element ima parent i ako nije riječ o modal-component elementu
 		// koji je root element modalnog prikaza
 		// krenut ćemo od njega kako bi i prosljeđeni element uzeli u obzir
@@ -752,12 +751,40 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 			element = element.parentElement;
 		}
 
-		const rawElements = element.querySelectorAll(this.config.FocusableSelectors);
+		return element.querySelectorAll(this.config.FocusableSelectors);
+	}
+
+	private getDefaultFocusableElements(element: HTMLElement): NodeListOf<Element> {
+		return element.querySelectorAll(MODAL_DEFAULT_SELECTOR);
+	}
+
+	/**
+	 * filter element which we need to ignore
+	 * this method isn't used on focus with `tab`,
+	 * because there we need to be able go through
+	 * toolbar buttons
+	 * @param el
+	 */
+	private filterAllowed(el: HTMLElement,
+		rawElements:  NodeListOf<Element> = this.getFocusableElements(el)): Element[] {
 
 		// Ignore untabbable elements, ie. those with tabindex = -1
 		const tabbableEl = this.filterTabbableElements(rawElements);
+		const focusableElements = this.filterVisibleElements(<HTMLElement[]>tabbableEl);
 
-		return this.filterVisibleElements(<HTMLElement[]>tabbableEl);
+		if (focusableElements.length > 0) {
+			// filter ignore elements
+			// to prevent focusing unavailable element
+			const ignoreElements = Array.from((<HTMLElement>el).querySelectorAll(this.config.IgnoreFocusSelectors));
+
+			if (ignoreElements.length > 0) {
+				return focusableElements.filter((element: Element) => ignoreElements.indexOf(element) === -1);
+			}
+
+			return focusableElements;
+		}
+
+		return [];
 	}
 
 	private filterTabbableElements(elements: NodeListOf<Element>): Element[] {
@@ -774,31 +801,6 @@ export class ModalComponent implements OnInit, AfterViewInit, OnDestroy, IHostMo
 
 	private filterVisibleElements(elements: HTMLElement[]): Element[] {
 		return elements.filter((element: HTMLElement) => element.offsetWidth > 0 || element.offsetHeight > 0);
-	}
-
-	/**
-	 * filter element which we need to ignore
-	 * this method isn't used on focus with `tab`,
-	 * because there we need to be able go through
-	 * toolbar buttons
-	 * @param el
-	 */
-	private filterAllowed(el: HTMLElement): Element[] {
-		const focusableElements = this.getFocusableElements(el);
-
-		if (focusableElements.length > 0) {
-			// filter ignore elements
-			// to prevent focusing unavailable element
-			const ignoreElements = Array.from((<HTMLElement>el).querySelectorAll(this.config.IgnoreFocusSelectors));
-
-			if (ignoreElements.length > 0) {
-				return focusableElements.filter((element: Element) => ignoreElements.indexOf(element) === -1);
-			}
-
-			return focusableElements;
-		}
-
-		return [];
 	}
 
 	private notifyResize() {

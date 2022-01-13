@@ -37,7 +37,6 @@
     "@angular/compiler": "~12.2.15",
     "@angular/core": "~12.2.15",
     "@angular/forms": "~12.2.15",
-    "@angular/http": "7.2.15",
     "@angular/platform-browser": "~12.2.15",
     "@angular/platform-browser-dynamic": "~12.2.15",
     "@angular/router": "~12.2.15",

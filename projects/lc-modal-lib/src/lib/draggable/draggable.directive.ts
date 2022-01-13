@@ -1,17 +1,25 @@
-import { Directive, Optional, Host, SkipSelf, ElementRef } from '@angular/core';
+import { Directive, OnDestroy, ElementRef } from '@angular/core';
 import { ModalHelper } from './../modal-helper.service';
 import { ModalClassNames } from '../modal-configuration.class';
-import { ModalComponent } from '../modal.component';
+import type { ModalComponent } from '../modal.component';
 
 @Directive({ selector: '[draggable]' })
-export class Draggable {
-	constructor(
-		@Optional()
-		@Host()
-		@SkipSelf()
-		private parent: ModalComponent,
-		private modalHelper: ModalHelper
-	) { }
+export class Draggable implements OnDestroy {
+	private parent: ModalComponent = null;
+
+	private hostElementRef: ElementRef = null;
+
+	constructor(private modalHelper: ModalHelper) { }
+
+	public ngOnDestroy(): void {
+		this.parent =
+		this.hostElementRef = null;
+	}
+
+	public setParent(parent: ModalComponent): void {
+		this.parent = parent;
+		this.hostElementRef = parent.getHostElementRef();
+	}
 
 	public isActive(): boolean {
 		return this.parent.isActive;
@@ -30,7 +38,7 @@ export class Draggable {
 	}
 
 	public get hostElement(): ElementRef {
-		return <ElementRef>(<any>this.parent).hostElementRef;
+		return this.hostElementRef;
 	}
 
 	public left(): number {

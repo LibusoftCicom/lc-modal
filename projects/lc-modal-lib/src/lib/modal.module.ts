@@ -25,18 +25,17 @@ export {
 } from './modal-configuration.class';
 
 @NgModule({
-	imports: [CommonModule],
-	declarations: [ModalComponent, ModalAnchor, DraggableHandle, Draggable, Resizable],
-	exports: [ModalAnchor],
-	providers: [
-		{
-			provide: ModalConfig,
-			useValue: ModalConfig
-		},
-		Modal,
-		ModalHelper
-	],
-	entryComponents: [ModalAnchor]
+    imports: [CommonModule],
+    declarations: [ModalComponent, ModalAnchor, DraggableHandle, Draggable, Resizable],
+    exports: [ModalAnchor],
+    providers: [
+        {
+            provide: ModalConfig,
+            useValue: ModalConfig
+        },
+        Modal,
+        ModalHelper
+    ]
 })
 export class ModalModule {
 }

@@ -1,3 +1,6 @@
+
+export const MODAL_DEFAULT_SELECTOR = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), *[tabindex], *[contenteditable]';
+
 export class ModalConfig {
 	constructor() {}
 

@@ -539,6 +539,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 		hostComponentInstance.setTitle(this.titleValue).setCloseFn(() => this.cancel());
 		hostComponentInstance.setActive = () => this.active = true;
 
+		if (!this._focusElement) {
+			// set element which will be used to focus on modal close
+			this._focusElement = this.tryToFindFocusableElement();
+		}
+
 		if (this.previous) {
 			// flag previous modal as inactive
 			this.previous.active = false;
@@ -570,11 +575,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 			}
 		};
 
-		if (!this._focusElement) {
-			// set element which will be used to focus on modal close
-			this._focusElement = this.tryToFindFocusableElement();
-		}
-
 		// toggle status
 		this.configuration
 			.valueChanges
@@ -593,7 +593,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 			this.calcInitPosition();
 		}
 
-		hostComponentInstance.autoFocus();
+		// hostComponentInstance.autoFocus();
 	}
 
 	private isCalcRequired(): boolean {
@@ -644,7 +644,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		if (previousComponent) {
 			hostElement = previousComponent.componentInstanceRef.location.nativeElement;
 			if (!hostElement) {
-				console.warn('Is not included known DOM element!');
+				console.warn('Element is unknown!');
 			}
 		}
 
