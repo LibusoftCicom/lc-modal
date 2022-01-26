@@ -43,8 +43,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	@ViewChild('modalBox', { static: true })
 	private modalBox: ElementRef;
 
-	@ViewChild(Resizable, { static: false })
-	private readonly resizableRef: Resizable | null;
+	private resizableRef: Resizable | null;
 
 	@ViewChild(Draggable, { static: true })
 	private readonly draggableRef: Draggable;
@@ -94,10 +93,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	public ngAfterContentInit(): void {
-		if (this.resizableRef) {
-			this.resizableRef.setParent(this);
-		}
-
 		this.draggableRef.setParent(this);
 	}
 
@@ -128,6 +123,14 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		this.eventDestroyHooks.length = 0;
 		this.focusOnChangeElement = null;
 		this.modalConfiguration = null;
+	}
+
+	@ViewChild(Resizable)
+	public set resizable(elRef: Resizable) {
+		if (elRef) {
+			this.resizableRef = elRef;
+			this.resizableRef.setParent(this);
+		}
 	}
 
 	public getHostElementRef(): ElementRef {
