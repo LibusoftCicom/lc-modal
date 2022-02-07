@@ -44,7 +44,6 @@ export class AppComponent {
 			.title('Form modal')
 			.setHeight(370)
 			.setWidth(700)
-			.draggable(false)
 			.resizable(true)
 			.component(ModalComponentExample)
 			.draggable(true)

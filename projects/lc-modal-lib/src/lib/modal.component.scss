@@ -98,6 +98,7 @@ $header-height: 28px;
 	border-radius: 0px;
 	color: #000;
 	display: flex;
+	flex-wrap: nowrap;
 	font-size: 14px;
 	height: $header-height;
 	justify-content: space-between;

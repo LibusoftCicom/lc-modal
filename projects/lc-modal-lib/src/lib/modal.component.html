@@ -17,7 +17,7 @@
 
 	<ng-template #headerContent>
 		<div class="modal-title">{{ title }}</div>
-		<div class="modal-controls" [ngStyle]="{'width': getControlsWidth()}">
+		<div class="modal-controls" [ngStyle]="{'min-width': getControlsWidth()}">
 			<div *ngIf="collapseButtonEnabled"
 				class="modal-header-btn collapse-btn"
 				(mousedown)="toggleCollapse()">

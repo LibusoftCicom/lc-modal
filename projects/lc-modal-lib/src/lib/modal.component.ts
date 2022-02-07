@@ -192,16 +192,17 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	public getControlsWidth(): null | string {
+		const BUTTON_WIDTH = 28;
 		let width = 0;
 
 		if (this.closeButtonEnabled) {
-			width += 28;
+			width += BUTTON_WIDTH;
 		}
 		if (this.maximizeButtonEnabled) {
-			width += 28;
+			width += BUTTON_WIDTH;
 		}
 		if (this.collapseButtonEnabled) {
-			width += 28;
+			width += BUTTON_WIDTH;
 		}
 
 		return width === 0 ? null : width + 'px';
