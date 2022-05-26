@@ -160,13 +160,13 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
 		if (this.resizeDirection === 'right' || this.resizeDirection === 'both') {
-			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(),
-			this.parent.getConfiguration().getMinWidth().value);
+			const width = this.parent.getConfiguration().getMinWidth()?.value;
+			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), width);
 		}
 
 		if (this.resizeDirection === 'bottom' || this.resizeDirection === 'both') {
-			this.height = Math.max(mousePos.y - this.parent.getPositionTop(),
-			this.parent.getConfiguration().getMinHeight().value);
+			const height = this.parent.getConfiguration().getMinHeight()?.value;
+			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), height);
 		}
 
 		if (this.height) {
@@ -196,9 +196,13 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 		const minWidth = this.parent.getConfiguration().getMinWidth();
 		const minHeight = this.parent.getConfiguration().getMinHeight();
+		if (minWidth) {
+			this.renderer.setStyle(this.pseudoEl, 'min-width', minWidth.toString() + 'px');
+		}
 
-		this.renderer.setStyle(this.pseudoEl, 'min-width', minWidth.toString() + 'px');
-		this.renderer.setStyle(this.pseudoEl, 'min-height', minHeight.toString() + 'px');
+		if (minHeight) {
+			this.renderer.setStyle(this.pseudoEl, 'min-height', minHeight.toString() + 'px');
+		}
 
 		const top = this.parent.getPositionTop();
 		const left = this.parent.getPositionLeft();

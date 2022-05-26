@@ -98,22 +98,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 
 	public ngAfterViewInit(): void {
 		setTimeout(() => this.autoFocus(), 100);
-
-		/**
-		 * in case we doesn't have min width and min height:
-		 * we will have problem in case when
-		 * user manually triggers maximize and after that minimize
-		 * modal will take max width and height he can depending on window size, not the previous one
-		 */
-		if (!this.modalConfiguration.isMaximized()) {
-			if (!this.modalConfiguration.getMinWidth()) {
-				this.modalConfiguration.setMinWidth({ value: this.getWidth(), units: ModalDimensionUnits.PIXEL });
-			}
-
-			if (!this.modalConfiguration.getMinHeight()) {
-				this.modalConfiguration.setMinHeight({ value: this.getHeight(), units: ModalDimensionUnits.PIXEL });
-			}
-		}
+		this.setInitialMinSizes();
 	}
 
 	public ngOnDestroy(): void {
@@ -205,7 +190,40 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 			width += BUTTON_WIDTH;
 		}
 
-		return width === 0 ? null : width + 'px';
+		return width === 0 ? null : width + ModalDimensionUnits.PIXEL;
+	}
+
+	/**
+	 * in case we doesn't have min width and min height:
+	 * we will have problem in case when
+	 * user want to resize modal window
+	 */
+	private setInitialMinSizes(): void {
+		if (!this.modalConfiguration.getMinWidth()) {
+			this.modalConfiguration.setMinWidth({ value: this.getWidth(), units: ModalDimensionUnits.PIXEL });
+		}
+
+		/**
+		 * due to the resize it is necessary to set the min-size,
+		 * but it must not exceed 100% of the page height
+		 */
+		if (!this.modalConfiguration.getMinHeight()) {
+			const windowHeight = this.modalConfiguration.getBoundbox().height;
+			if (this.getHeight() < windowHeight) {
+				this.modalConfiguration.setMinHeight({ value: this.getHeight(), units: ModalDimensionUnits.PIXEL });
+			} else {
+				this.modalConfiguration.setMinHeight({ value: 90, units: ModalDimensionUnits.PERCENTAGE });
+				this.modalConfiguration.setTopPosition(0);
+			}
+		}
+
+		/**
+		 * if it does not exist it is necessary to set the height to max 100%
+		 * to limit modal height so that the modal does not fall out of the screen
+		 */
+		if (!this.modalConfiguration.getMaxHeight()) {
+			this.modalConfiguration.setMaxHeight({ value: 100, units: ModalDimensionUnits.PERCENTAGE });
+		}
 	}
 
 	private setInitialValues(): void {

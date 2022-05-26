@@ -12,7 +12,7 @@ import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
-import { IModalDimension, ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
+import { IModalDimension, IModalDimensions, ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -437,6 +437,10 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
+	public getMinHeight(): IModalDimension | null {
+		return this.configuration.getMinHeight() || null;
+	}
+
 	public setMaxHeight(height: number, units: string = 'px'): this {
 		this.configuration.setMaxHeight({ value: height, units });
 		return this;
@@ -744,6 +748,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		const preCloseFnRef: IClassPreclose = childComponent.preClose || function() {};
 
 		const closeFn = error => {
+			console.error(error);
 			// notify observer about error in pre closing phase
 			closingStatus.error(error);
 

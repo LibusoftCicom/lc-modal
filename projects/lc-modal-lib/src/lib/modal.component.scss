@@ -260,7 +260,7 @@ $header-height: 28px;
 		cursor: default;
 	}
 
-	:host:not(.behavior-preserved) {
+	:host:not(.behavior-preserved):not(.message-box) {
 		.modal-box {
 			bottom: 0;
 			left: 0 !important;
@@ -281,7 +281,9 @@ $header-height: 28px;
 		-webkit-transform: translate(-50%, -50%);
 		bottom: auto !important;
 		left: 50% !important;
+		margin: auto;
 		min-height: auto !important;
+		min-width: auto !important;
 		right: auto !important;
 		top: 50% !important;
 		transform: translate(-50%, -50%);

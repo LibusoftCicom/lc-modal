@@ -221,10 +221,14 @@ export class ModalConfiguration {
 	public setResizable(enabled: boolean, saveState: boolean): void {
 		if (saveState) {
 			this.savedState.resizable = enabled;
+
+			/**
+			 * maximize button should be visible if resizable is enabled
+			 */
+			this.setMaximizeButtonVisible(enabled);
 		}
 
 		this.resizable = enabled;
-		this.setMaximizeButtonVisible(true);
 		this.valueChanged.next({ type: ModalConfigurationEventType.RESIZABLE_CHANGE, value: enabled });
 	}
 
@@ -319,10 +323,10 @@ export class ModalConfiguration {
 	}
 
 	/**
-	 * showMaximize only if it is enabled and there isn't any max height or width limitation
+	 * showMaximize only if it is enabled
 	 */
 	public isMaximizeButtonVisible(): boolean {
-		return this.showMaximizeButton && (this.maxWidth == null && this.maxHeight == null);
+		return this.showMaximizeButton;
 	}
 
 	public setMaximizeButtonVisible(isVisible: boolean): void {
@@ -371,18 +375,12 @@ export class ModalConfiguration {
 	}
 
 	public setHeight(height: IModalDimension, saveState: boolean = true): void {
-		if (!this.minHeight) {
-			this.setMinHeight(height);
-		}
-
 		if (saveState) {
 			this.savedState.height = height;
 		}
 
 		this.height = height;
-		if (height?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.HEIGHT_CHANGE, value: height });
-		}
+		this.valueChanged.next({ type: ModalConfigurationEventType.HEIGHT_CHANGE, value: height || { value: null } });
 	}
 
 	private restoreHeight(): void {
@@ -395,17 +393,18 @@ export class ModalConfiguration {
 
 	public setMinHeight(height: IModalDimension, saveState: boolean = true): void {
 		this.minHeight = height;
-
-		if (this.initMinHeight == null) {
-			this.initMinHeight = height;
-		}
+		this.setInitMinHeight(height);
 
 		if (saveState) {
 			this.savedState.minHeight = height;
 		}
 
-		if (height?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.MIN_HEIGHT_CHANGE, value: height });
+		this.valueChanged.next({ type: ModalConfigurationEventType.MIN_HEIGHT_CHANGE, value: height || { value: null } });
+	}
+
+	public setInitMinHeight(height: IModalDimension): void {
+		if (this.initMinHeight == null) {
+			this.initMinHeight = height;
 		}
 	}
 
@@ -428,9 +427,7 @@ export class ModalConfiguration {
 			this.savedState.maxHeight = height;
 		}
 
-		if (height?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.MAX_HEIGHT_CHANGE, value: height });
-		}
+		this.valueChanged.next({ type: ModalConfigurationEventType.MAX_HEIGHT_CHANGE, value: height || { value: null } });
 	}
 
 	public restoreMaxHeight(): void {
@@ -442,18 +439,12 @@ export class ModalConfiguration {
 	}
 
 	public setWidth(width: IModalDimension, saveState: boolean = true): void {
-		if (!this.minWidth) {
-			this.setMinWidth(width);
-		}
-
 		if (saveState) {
 			this.savedState.width = width;
 		}
 
 		this.width = width;
-		if (width?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.WIDTH_CHANGE, value: width });
-		}
+		this.valueChanged.next({ type: ModalConfigurationEventType.WIDTH_CHANGE, value: width || { value: null } });
 	}
 
 	public restoreWidth(): void {
@@ -466,17 +457,18 @@ export class ModalConfiguration {
 
 	public setMinWidth(width: IModalDimension, saveState: boolean = true): void {
 		this.minWidth = width;
-
-		if (this.initMinWidth == null) {
-			this.initMinWidth = width;
-		}
+		this.setInitMinWidth(width);
 
 		if (saveState) {
 			this.savedState.minWidth = width;
 		}
 
-		if (width?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.MIN_WIDTH_CHANGE, value: width });
+		this.valueChanged.next({ type: ModalConfigurationEventType.MIN_WIDTH_CHANGE, value: width || { value: null } });
+	}
+
+	public setInitMinWidth(width: IModalDimension) {
+		if (this.initMinWidth == null) {
+			this.initMinWidth = width;
 		}
 	}
 
@@ -499,9 +491,7 @@ export class ModalConfiguration {
 			this.savedState.maxWidth = width;
 		}
 
-		if (width?.value > 0) {
-			this.valueChanged.next({ type: ModalConfigurationEventType.MAX_WIDTH_CHANGE, value: width });
-		}
+		this.valueChanged.next({ type: ModalConfigurationEventType.MAX_WIDTH_CHANGE, value: width || { value: null } });
 	}
 
 	public restoreMaxWidth() {
