@@ -12,7 +12,14 @@ import { ModalConfig } from './modal-config.class';
 
 import { Observable, Subject, isObservable } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
-import { IModalDimension, IModalDimensions, ModalClassNames, ModalConfiguration, ModalConfigurationEventType } from './modal-configuration.class';
+import {
+	DEFAULT_Z_INDEX,
+	IModalDimension,
+	IModalDimensions,
+	ModalClassNames,
+	ModalConfiguration,
+	ModalConfigurationEventType
+} from './modal-configuration.class';
 
 function isPromise(obj: any): obj is Promise<any> {
 	// allow any Promise/A+ compliant thenable.
@@ -94,27 +101,42 @@ export class ModalFactory implements IModal<ModalFactory> {
 	/**
 	 * set modal as active, put flags to modal wrapper and child component we used
 	 * to create modal
+	 * also change z-index value to the highest
 	 */
 	public set active(state: boolean) {
 		const isActive = this.isActive;
 		/**
 		 * toggle all other modals active state to false
+		 * and find the biggest zIndex
 		 */
+		let zIndex = DEFAULT_Z_INDEX;
 		this.modals.forEach((modal) => {
 			modal.configuration.removeClass(ModalClassNames.OVERLAY_ACTIVE);
 
 			if (modal !== this && state === true) {
 				modal.active = false;
 			}
+
+			if (!modal.isDestroying) {
+				zIndex = Math.max(modal.getOrder(), zIndex);
+			}
 		});
+
 
 		const hostInstance = this.hostComponentRef;
 		// set property isActive to child component so
 		// programers could be able to check is their component current active one
 		this.isActive = this.componentRef.isActive = hostInstance.isActive = state;
-		// hide or show overlay on this instance
 
 		if (state) {
+			/**
+			 * move only active modal to the top by increasing the maximum z-index by 1
+			 * and do that only if this modal already has not the highest z-index
+			 */
+			if (this.configuration.getOrder() !== zIndex) {
+				this.configuration.setOrder(zIndex + 1);
+			}
+
 			// auto focus elements and
 			// if element is active set class active to it
 			this.configuration.addClass(ModalClassNames.ACTIVE);
@@ -126,6 +148,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 		}
 
 		/**
+		 * hide or show overlay on this instance
+		 *
 		 * if element have overlay and if same element is not last
 		 * we can't place it above all other with overlay
 		 */
@@ -163,6 +187,133 @@ export class ModalFactory implements IModal<ModalFactory> {
 			? this.componentInstanceRef.instance
 			: null;
 	}
+
+	/**
+	 * change z-index position
+	 */
+	public setOrder(zIndex: number): void {
+		this.configuration.setOrder(zIndex);
+	}
+
+	public getOrder(): number {
+		return this.configuration.getOrder();
+	}
+
+	public getHeight(): IModalDimension {
+		return this.configuration.getHeight();
+	}
+
+	public getWidth(): IModalDimension {
+		return this.configuration.getWidth();
+	}
+
+	public isVisible(): boolean {
+		return this.configuration.isVisible();
+	}
+
+	/**
+	 * forward any parameters to component in modal
+	 */
+	 public params(params: any): this {
+		this.paramsValue = params;
+		return this;
+	}
+
+	/**
+	 * set additional params
+	 */
+	public additionalParams(additionalParams: any): this {
+		this.additionalParamsValue = additionalParams;
+		return this;
+	}
+
+	/**
+	 * add custom css className to modal
+	 */
+	public setClass(className: string): this {
+		this.configuration.addClass(className);
+		return this;
+	}
+
+	/**
+	 * remove className from modal
+	 */
+	public removeClass(className: string): this {
+		this.configuration.removeClass(className);
+		return this;
+	}
+
+	public setHeight(height: number, units: string = 'px'): this {
+		this.configuration.setHeight({ value: height, units });
+		return this;
+	}
+
+	public setMinHeight(height: number, units: string = 'px'): this {
+		this.configuration.setMinHeight({ value: height, units });
+		return this;
+	}
+
+	public getMinHeight(): IModalDimension | null {
+		return this.configuration.getMinHeight() || null;
+	}
+
+	public setMaxHeight(height: number, units: string = 'px'): this {
+		this.configuration.setMaxHeight({ value: height, units });
+		return this;
+	}
+
+	public setWidth(width: number, units: string = 'px'): this {
+		this.configuration.setWidth({ value: width, units });
+		return this;
+	}
+
+	public setMinWidth(width: number, units: string = 'px'): this {
+		this.configuration.setMinWidth({ value: width, units });
+		return this;
+	}
+
+	public setMaxWidth(width: number, units: string = 'px'): this {
+		this.configuration.setMaxWidth({ value: width, units });
+		return this;
+	}
+
+	public setDimensions(height: number, width: number, units: string = 'px'): this {
+		this.configuration.setHeight({ value: height, units });
+		this.configuration.setWidth({ value: width, units });
+		return this;
+	}
+
+	public setFullScreen(isFullscreen: boolean = true) {
+		this.configuration.setMaximized(isFullscreen);
+		return this;
+	}
+
+	public offsetLeft(left: number): this {
+		this.configuration.setLeftPosition(left);
+		return this;
+	}
+
+	public getOffsetLeft(): IModalDimension | null {
+		return this.configuration.getLeftPosition() != null ? {...this.configuration.getLeftPosition()} : null;
+	}
+
+	public offsetTop(top: number): this {
+		this.configuration.setTopPosition(top);
+		return this;
+	}
+
+	public getOffsetTop(): IModalDimension | null {
+		return this.configuration.getTopPosition() != null ? {...this.configuration.getTopPosition()} : null;
+	}
+
+	/**
+	 * method used to force modal closing after preClose return rejection
+	 */
+	public closeOnError(): this {
+		this.closeOnErrorEnabled = true;
+		return this;
+	}
+
 
 	/**
 	 * trigger detect changes in modal component
@@ -317,13 +468,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	/**
-	 * change z-index position
-	 */
-	public order(zIndex: number): void {
-		this.configuration.setOrder(zIndex);
-	}
-
-	/**
 	 * Set element to focus after modal closes
 	 */
 	public focusOnClose(el: HTMLElement): this {
@@ -392,109 +536,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public closeOnClick(): this {
 		this.configuration.setClickOnDocumentClose(true);
-		return this;
-	}
-
-	/**
-	 * forward any parameters to component in modal
-	 */
-	public params(params: any): this {
-		this.paramsValue = params;
-		return this;
-	}
-
-	/**
-	 * set additional params
-	 */
-	public additionalParams(additionalParams: any): this {
-		this.additionalParamsValue = additionalParams;
-		return this;
-	}
-
-	/**
-	 * add custom css className to modal
-	 */
-	public setClass(className: string): this {
-		this.configuration.addClass(className);
-		return this;
-	}
-
-	/**
-	 * remove className from modal
-	 */
-	public removeClass(className: string): this {
-		this.configuration.removeClass(className);
-		return this;
-	}
-
-	public setHeight(height: number, units: string = 'px'): this {
-		this.configuration.setHeight({ value: height, units });
-		return this;
-	}
-
-	public setMinHeight(height: number, units: string = 'px'): this {
-		this.configuration.setMinHeight({ value: height, units });
-		return this;
-	}
-
-	public getMinHeight(): IModalDimension | null {
-		return this.configuration.getMinHeight() || null;
-	}
-
-	public setMaxHeight(height: number, units: string = 'px'): this {
-		this.configuration.setMaxHeight({ value: height, units });
-		return this;
-	}
-
-	public setWidth(width: number, units: string = 'px'): this {
-		this.configuration.setWidth({ value: width, units });
-		return this;
-	}
-
-	public setMinWidth(width: number, units: string = 'px'): this {
-		this.configuration.setMinWidth({ value: width, units });
-		return this;
-	}
-
-	public setMaxWidth(width: number, units: string = 'px'): this {
-		this.configuration.setMaxWidth({ value: width, units });
-		return this;
-	}
-
-	public setDimensions(height: number, width: number, units: string = 'px'): this {
-		this.configuration.setHeight({ value: height, units });
-		this.configuration.setWidth({ value: width, units });
-		return this;
-	}
-
-	public setFullScreen(isFullscreen: boolean = true) {
-		this.configuration.setMaximized(isFullscreen);
-		return this;
-	}
-
-	public offsetLeft(left: number): this {
-		this.configuration.setLeftPosition(left);
-		return this;
-	}
-
-	public getOffsetLeft(): IModalDimension | null {
-		return this.configuration.getLeftPosition() != null ? {...this.configuration.getLeftPosition()} : null;
-	}
-
-	public offsetTop(top: number): this {
-		this.configuration.setTopPosition(top);
-		return this;
-	}
-
-	public getOffsetTop(): IModalDimension | null {
-		return this.configuration.getTopPosition() != null ? {...this.configuration.getTopPosition()} : null;
-	}
-
-	/**
-	 * method used to force modal closing after preClose return rejection
-	 */
-	public closeOnError(): this {
-		this.closeOnErrorEnabled = true;
 		return this;
 	}
 

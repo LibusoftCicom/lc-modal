@@ -218,6 +218,7 @@ $header-height: 28px;
 }
 
 :host(.message-box) {
+	z-index: 400000;
 
 	.modal-pseudo {
 		min-width: 400px;

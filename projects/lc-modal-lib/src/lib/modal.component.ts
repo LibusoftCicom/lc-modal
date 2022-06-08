@@ -339,6 +339,13 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		this.eventDestroySubscriptions.push(
 			this.modalConfiguration
 				.valueChanges
+				.pipe(filter(({ type }) => type === ModalConfigurationEventType.ORDER_CHANGED))
+				.subscribe(({ value }) => this.changeStackOrder(value))
+		);
+
+		this.eventDestroySubscriptions.push(
+			this.modalConfiguration
+				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.FULLSCREEN_CHANGE))
 				.subscribe(({ value }) => {
 					this.maximized = value;

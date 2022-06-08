@@ -22,6 +22,12 @@ export class ModalViewModel {
 	}
 
 	public add(modal: ModalFactory) {
+		/**
+		 * calculate z-index
+		 * it need to be different from the last opened modal
+		 * so that the code within the Factory class (line 134) can calculate the same correctly
+		 */
+		modal.setOrder(modal.getOrder() + this._modals.length);
 		this._modals.push(modal);
 		this.counter++;
 	}

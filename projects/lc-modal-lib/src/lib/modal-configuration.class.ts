@@ -21,7 +21,8 @@ export enum ModalConfigurationEventType {
 	MIN_WIDTH_CHANGE,
 	MAX_WIDTH_CHANGE,
 
-	POSITION_CHANGE
+	POSITION_CHANGE,
+	ORDER_CHANGED
 }
 
 export interface IModalConfigurationEvent<T = any> {
@@ -56,6 +57,7 @@ export interface IModalDimension {
 	units: string;
 }
 
+export const DEFAULT_Z_INDEX = 10000;
 
 export class ModalConfiguration {
 
@@ -129,7 +131,7 @@ export class ModalConfiguration {
 	/**
 	 * z-index
 	 */
-	private stackOrder: number = null;
+	private stackOrder: number = DEFAULT_Z_INDEX;
 
 	private savedState = {
 		resizable: false,
@@ -545,7 +547,10 @@ export class ModalConfiguration {
 
 	public setOrder(order: number): void {
 		this.stackOrder = order;
-		// TODO -> implement stack order change
+		this.valueChanged.next({
+			type: ModalConfigurationEventType.ORDER_CHANGED,
+			value: order
+		});
 	}
 
 	/**
