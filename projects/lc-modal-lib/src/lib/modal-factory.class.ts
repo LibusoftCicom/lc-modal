@@ -496,6 +496,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public title(title: string): this {
 		this.titleValue = title;
+		if (this.hostComponentRef) {
+			this.hostComponentRef.setTitle(title);
+		}
 		return this;
 	}
 
