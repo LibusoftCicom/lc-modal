@@ -32,6 +32,7 @@ export class AppComponent {
 			.closeOnError()
 			.positionOnScreenCenter(true)
 			.draggable(false)
+			.setOrder(50000)
 			.setClass('message-box')
 			.component(ModalComponentExample2);
 
