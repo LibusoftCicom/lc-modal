@@ -191,8 +191,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 	/**
 	 * change z-index position
 	 */
-	public setOrder(zIndex: number): void {
+	public setOrder(zIndex: number): this {
 		this.configuration.setOrder(zIndex);
+		return this;
 	}
 
 	public getOrder(): number {
