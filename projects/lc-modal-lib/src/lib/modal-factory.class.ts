@@ -1,4 +1,4 @@
-import { ComponentFactoryResolver, ViewContainerRef, ComponentFactory, ComponentRef, Injector } from '@angular/core';
+import { ViewContainerRef, ComponentRef, Injector } from '@angular/core';
 import { ModalComponent } from './modal.component';
 import {
 	IModalResultData,
@@ -37,13 +37,9 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private additionalParamsValue: any = null;
 
-	private componentFactory: ComponentFactory<any> = null;
-
 	private componentInstanceRef: ComponentRef<any> = null;
 
-	private componentFactoryRef: () => any = null;
-
-	private hostComponentWrapperFactory: ComponentFactory<ModalComponent> = null;
+	private componentClassRef: any = null;
 
 	private hostComponentWrapperRef: ComponentRef<ModalComponent> = null;
 
@@ -76,7 +72,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	private readonly configuration: ModalConfiguration = new ModalConfiguration();
 
 	constructor(
-		private cfr: ComponentFactoryResolver,
 		private viewContainerRef: ViewContainerRef,
 		public id: number,
 		private injector: Injector,
@@ -337,7 +332,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * @return  confirm and cancel callbacks
 	 */
 	public async open<D>(): Promise<IModalResultData<D>> {
-		if (!this.componentFactoryRef) {
+		if (!this.componentClassRef) {
 			throw new Error(`Before calling open() you need to set component()`);
 		}
 
@@ -418,9 +413,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * Define component which will be opened in modal
 	 */
 	public component<T>(component: T): this {
-		this.componentFactoryRef = () => component;
-		this.componentFactory = this.cfr.resolveComponentFactory(this.componentFactoryRef());
-		this.hostComponentWrapperFactory = this.cfr.resolveComponentFactory(ModalComponent);
+		this.componentClassRef = component;
 		return this;
 	}
 
@@ -574,11 +567,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	private prepareComponent(): void {
 		// ModalComponent instance
-		this.hostComponentWrapperRef = this.viewContainerRef.createComponent(
-			this.hostComponentWrapperFactory,
-			null,
-			this.injector
-		);
+		this.hostComponentWrapperRef = this.viewContainerRef.createComponent(ModalComponent, { injector: this.injector });
 		const hostComponentInstance = this.hostComponentRef;
 		const changeDetectorRef = this.hostComponentWrapperRef.changeDetectorRef;
 		hostComponentInstance['id'] = this.id;
@@ -655,7 +644,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * prepare modal child component
 	 */
 	private prepareChildComponent(parentComponent: ModalComponent): IModalComponent<any> {
-		this.componentInstanceRef = parentComponent.addComponent(this.componentFactory);
+		this.componentInstanceRef = parentComponent.addComponent(this.componentClassRef);
 		const childComponent = this.componentRef;
 
 		/**
