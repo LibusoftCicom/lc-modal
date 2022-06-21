@@ -9,9 +9,9 @@ import {
 	HostListener,
 	Renderer2,
 	OnDestroy,
-	ComponentFactory,
 	ChangeDetectorRef,
-	AfterContentInit
+	AfterContentInit,
+	Type
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ModalConfig, MODAL_DEFAULT_SELECTOR } from './modal-config.class';
@@ -172,7 +172,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		return this;
 	}
 
-	public addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T> {
+	public addComponent<T>(componentFactory: Type<T>): ComponentRef<T> {
 		return this.contentRef.createComponent(componentFactory);
 	}
 

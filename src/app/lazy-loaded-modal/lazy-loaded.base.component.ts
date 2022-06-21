@@ -1,10 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Modal } from '@libusoftcicom/lc-modal';
+import { LazyLoadedService } from './lazy-loaded.service';
 import { ModalComponentExample } from './modal-example/modal-example.component';
-
-
-
 
 
 @Component({
@@ -46,7 +44,9 @@ import { ModalComponentExample } from './modal-example/modal-example.component';
 })
 export class LazyLoadedBaseComponent {
 
-    constructor(private modal: Modal, private readonly router: Router) { }
+    constructor(private modal: Modal, private readonly router: Router, private lazyLoadedService: LazyLoadedService) {
+        console.log(this);
+    }
 
     public async example() {
         const modalResult = await this.modal

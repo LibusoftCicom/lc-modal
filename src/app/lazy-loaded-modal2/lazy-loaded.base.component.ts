@@ -44,7 +44,9 @@ import { ModalComponentExample } from './modal-example/modal-example.component';
 })
 export class LazyLoadedBaseComponent {
 
-    constructor(private modal: Modal, private readonly router: Router) { }
+    constructor(private modal: Modal, private readonly router: Router) {
+        console.log(this);
+    }
 
     public async example() {
         const modalResult = await this.modal

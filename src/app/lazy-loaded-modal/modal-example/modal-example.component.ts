@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BaseModalComponent } from '@libusoftcicom/lc-modal';
+import { LazyLoadedService } from '../lazy-loaded.service';
 
 
 @Component({
@@ -58,4 +59,10 @@ import { BaseModalComponent } from '@libusoftcicom/lc-modal';
 })
 export class ModalComponentExample extends BaseModalComponent {
 	public model: any = {};
+  private readonly lazyLoadedService = inject(LazyLoadedService);
+
+  constructor() {
+    super();
+    console.log(this);
+  }
 }

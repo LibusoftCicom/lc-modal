@@ -9,6 +9,7 @@ import { ModalComponentExample } from './modal-example/modal-example.component';
 import { FormsModule } from '@angular/forms';
 import { LazyLoadedBaseComponent } from './lazy-loaded.base.component';
 import { Router, RouterModule } from '@angular/router';
+import { LazyLoadedService } from './lazy-loaded.service';
 @NgModule({
 	declarations: [LazyLoadedBaseComponent, ModalComponentExample],
 	imports: [
@@ -22,6 +23,6 @@ import { Router, RouterModule } from '@angular/router';
 			}
 		])
 	],
-	providers: []
+	providers: [LazyLoadedService]
 })
 export class LazyLoadedModule {}

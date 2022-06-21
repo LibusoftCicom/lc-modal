@@ -1,4 +1,4 @@
-import { Injectable, ComponentFactoryResolver, Injector, ViewContainerRef, Optional, SkipSelf } from '@angular/core';
+import { Injectable, Injector, ViewContainerRef, Optional, SkipSelf } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ModalFactory } from './modal-factory.class';
 import { IModal } from './modal-types.class';
@@ -15,7 +15,6 @@ export class Modal implements IModal<ModalFactory> {
 	private model: ModalViewModel = new ModalViewModel();
 
 	constructor(
-		private cfr: ComponentFactoryResolver,
 		private injector: Injector,
 		private config: ModalConfig,
 		@Optional() @SkipSelf() private parent: Modal) {
@@ -91,7 +90,6 @@ export class Modal implements IModal<ModalFactory> {
 
 		// to each instance we need to provide Injector
 		const modal = new ModalFactory(
-			this.cfr,
 			viewContainerRef,
 			id,
 			this.injector,

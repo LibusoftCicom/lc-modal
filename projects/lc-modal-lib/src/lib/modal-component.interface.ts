@@ -1,4 +1,4 @@
-import { ComponentRef, ComponentFactory } from '@angular/core';
+import { ComponentRef, ComponentFactory, Type } from '@angular/core';
 import { ModalConfiguration } from './modal-configuration.class';
 
 export interface IHostModalComponent {
@@ -29,7 +29,7 @@ export interface IHostModalComponent {
 
 	setConfiguration(modalConfiguration: ModalConfiguration): void;
 
-	addComponent<T>(componentFactory: ComponentFactory<T>): ComponentRef<T>;
+	addComponent<T>(componentFactory: Type<T>): ComponentRef<T>;
 
 	getHeight(): number;
 	getWidth(): number;
