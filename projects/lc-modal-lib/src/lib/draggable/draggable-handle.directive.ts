@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
 	Directive,
 	Optional,
@@ -6,10 +7,11 @@ import {
 	SkipSelf,
 	ElementRef,
 	Renderer2,
-	HostListener,
 	AfterViewInit,
 	NgZone,
+	Inject,
 } from '@angular/core';
+import { fromEvent, merge, Subscription } from 'rxjs';
 import { ModalHelper } from '../modal-helper.service';
 import { Draggable } from './draggable.directive';
 
@@ -41,7 +43,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 
 	private timeout;
 
-	private eventDestroyHooks: Function[] = [];
+	private subscriptions: Subscription[] = [];
 
 	constructor(
 		@Optional()
@@ -51,7 +53,8 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		private renderer: Renderer2,
 		private elementRef: ElementRef,
 		private modalHelper: ModalHelper,
-		private zone: NgZone
+		private zone: NgZone,
+		@Inject(DOCUMENT) private readonly document
 	) {
 		this.modalComponentHost = parent.hostElement;
 	}
@@ -59,46 +62,42 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 	public ngAfterViewInit(): void {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
-			const mouseMoveFn = this.renderer.listen(
-				'document',
-				'mousemove',
-				(event: MouseEvent) => this.onMouseMove(event)
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.document, 'mousemove'),
+					fromEvent(this.document, 'touchmove', { passive: true }),
+	
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseMove(event))
 			);
 
-			const toucheMoveFn = this.renderer.listen(
-				'document',
-				'touchmove',
-				(event: MouseEvent) => this.onMouseMove(event)
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.document, 'mouseup'),
+					fromEvent(this.document, 'touchend'),
+	
+				)
+				.subscribe(() => this.onMouseUp())
 			);
 
-			const mouseUpFn = this.renderer.listen(
-				'document',
-				'mouseup',
-				(event: MouseEvent) => this.onMouseUp(event)
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.elementRef.nativeElement, 'touchstart', { passive: true }),
+					fromEvent(this.elementRef.nativeElement, 'mousedown')
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseDown(event))
 			);
-
-			const toucheUpFn = this.renderer.listen(
-				'document',
-				'touchend',
-				(event: MouseEvent) => this.onMouseUp(event)
-			);
-
-			this.eventDestroyHooks.push(mouseMoveFn);
-			this.eventDestroyHooks.push(mouseUpFn);
-			this.eventDestroyHooks.push(toucheMoveFn);
-			this.eventDestroyHooks.push(toucheUpFn);
 		});
 	}
 
 	public ngOnDestroy(): void {
-		this.eventDestroyHooks.forEach((destroyFn) => destroyFn());
+		this.subscriptions.forEach(subscription => subscription.unsubscribe());
+		this.subscriptions.length = 0;
 		this.parent =
 		this.modalComponentHost = null;
 	}
 
-	@HostListener('touchstart', ['$event'])
-	@HostListener('mousedown', ['$event'])
-	public onMouseDown(event: MouseEvent): void {
+	private onMouseDown(event: MouseEvent | TouchEvent): void {
 		if (this.timeout) {
 			clearTimeout(this.timeout);
 		}
@@ -107,7 +106,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 
 		// enable moving only if width is greater than 600px
 		if (this.parent.isDraggingPossible() &&
-			event.button !== MouseEventButton.Secondary
+			(event as MouseEvent).button !== MouseEventButton.Secondary
 		) {
 			this.timeout = setTimeout(() => {
 				this.preparePseudoEl();
@@ -117,7 +116,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	public onMouseUp(event: MouseEvent): void {
+	private onMouseUp(): void {
 		if (this.timeout) {
 			clearTimeout(this.timeout);
 		}
@@ -145,12 +144,10 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	public onMouseMove(event: MouseEvent): void {
-		// prati poziciju i pomići toliko pseudo element
+	private onMouseMove(event: MouseEvent | TouchEvent): void {
 		if (this.mouseDown) {
 			this.dragging = true;
 			this.parent.setClass();
-
 			this.calcNewPosition(event);
 		}
 	}
@@ -204,7 +201,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		this.mouseYDif = y - top;
 	}
 
-	private calcNewPosition(event: MouseEvent) {
+	private calcNewPosition(event: MouseEvent | TouchEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
 		this.top = mousePos.y - this.mouseYDif;
