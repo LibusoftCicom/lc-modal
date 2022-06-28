@@ -98,6 +98,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 
 	public ngAfterViewInit(): void {
 		setTimeout(() => this.autoFocus(), 100);
+		this.setInitialPosition();
 		this.setInitialMinSizes();
 	}
 
@@ -200,7 +201,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	 */
 	private setInitialMinSizes(): void {
 		if (!this.modalConfiguration.getMinWidth()) {
-			this.modalConfiguration.setMinWidth({ value: this.getWidth(), units: ModalDimensionUnits.PIXEL });
+			const width = this.modalConfiguration.getWidth()?.value || this.getWidth();
+			this.modalConfiguration.setMinWidth({ value: width, units: ModalDimensionUnits.PIXEL });
 		}
 
 		/**
@@ -256,6 +258,15 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		// add ionitialy defined class names
 		this.modalConfiguration.getClassNameList().forEach(className => this.changeClass(className, true));
 
+		if (this.modalConfiguration.isOverlayVisible()) {
+			// trigger class change
+			this.modalConfiguration.setOverlayVisible(true);
+		}
+
+		this.changeStackOrder(this.modalConfiguration.getOrder());
+	}
+
+	private setInitialPosition(): void {
 		if (!this.modalConfiguration.isPositionToScreenCenterEnabled()) {
 			if (this.modalConfiguration.getLeftPosition() != null) {
 				this.setLeftPosition(
@@ -268,14 +279,10 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 					this.modalConfiguration.getTopPosition().value,
 					this.modalConfiguration.getTopPosition().units);
 			}
+		} else {
+			// move it to the center
+			this.modalConfiguration.setToCenter();
 		}
-
-		if (this.modalConfiguration.isOverlayVisible()) {
-			// trigger class change
-			this.modalConfiguration.setOverlayVisible(true);
-		}
-
-		this.changeStackOrder(this.modalConfiguration.getOrder());
 	}
 
 	private registerEventListeners(): void {

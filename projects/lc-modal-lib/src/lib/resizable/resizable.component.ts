@@ -5,31 +5,23 @@ import {
 	ChangeDetectionStrategy,
 	AfterViewInit,
 	OnDestroy,
-	NgZone
+	NgZone,
+	Inject,
+	ViewChild
 } from '@angular/core';
 import { ModalHelper } from '../modal-helper.service';
 import { MouseEventButton } from '../draggable/draggable-handle.directive';
 import type { ModalComponent } from '../modal.component';
 import { ModalClassNames, ModalDimensionUnits } from '../modal-configuration.class';
+import { DOCUMENT } from '@angular/common';
+import { fromEvent, merge, Subscription } from 'rxjs';
 
 @Component({
 	selector: 'resizable',
 	template: `
-		<div
-			class="resizable-handle resizable-right"
-			(mousedown)="onMousedown($event, 'right')"
-			(touchstart)="onMousedown($event, 'right')"
-		></div>
-		<div
-			class="resizable-handle resizable-bottom"
-			(mousedown)="onMousedown($event, 'bottom')"
-			(touchstart)="onMousedown($event, 'bottom')"
-		></div>
-		<div
-			class="resizable-handle resizable-corner"
-			(mousedown)="onMousedown($event, 'both')"
-			(touchstart)="onMousedown($event, 'both')"
-		>
+		<div #resizableRightEl class="resizable-handle resizable-right"></div>
+		<div #resizableBottomEl class="resizable-handle resizable-bottom"></div>
+		<div #resizableCornerEl class="resizable-handle resizable-corner">
 			<span></span>
 		</div>
 	`,
@@ -49,40 +41,81 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 	private modalComponentHost: ElementRef;
 
-	private eventDestroyHooks: Function[] = [];
+	private subscriptions: Subscription[] = [];
 
 	private resizing = false;
 
 	private parent: ModalComponent = null;
 
+	@ViewChild('resizableRightEl')
+	public resizableRightEl: ElementRef<HTMLDivElement>;
+
+	@ViewChild('resizableBottomEl')
+	public resizableBottomEl: ElementRef<HTMLDivElement>;
+
+	@ViewChild('resizableCornerEl')
+	public resizableCornerEl: ElementRef<HTMLDivElement>;
+
 	constructor(
 		private renderer: Renderer2,
 		private modalHelper: ModalHelper,
-		private zone: NgZone
+		private zone: NgZone,
+		@Inject(DOCUMENT) private readonly document
 	) {
 	}
 
 	public ngAfterViewInit() {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
-			const mouseMoveFn = this.renderer.listen('document', 'mousemove', (event: MouseEvent) => this.onMouseMove(event));
-			const toucheMoveFn = this.renderer.listen('document', 'touchmove', (event: MouseEvent) =>
-				this.onMouseMove(event)
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.document, 'mousemove'),
+					fromEvent(this.document, 'touchmove', { passive: true }),
+	
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseMove(event))
 			);
-			const mouseUpFn = this.renderer.listen('document', 'mouseup', (event: MouseEvent) => this.onMouseUp());
-			const toucheUpFn = this.renderer.listen('document', 'touchend', (event: MouseEvent) => this.onMouseUp());
 
-			this.eventDestroyHooks.push(mouseMoveFn);
-			this.eventDestroyHooks.push(mouseUpFn);
-			this.eventDestroyHooks.push(toucheMoveFn);
-			this.eventDestroyHooks.push(toucheUpFn);
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.document, 'mouseup'),
+					fromEvent(this.document, 'touchend'),
+	
+				)
+				.subscribe(() => this.onMouseUp())
+			);
+
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.resizableRightEl.nativeElement, 'mousedown'),
+					fromEvent(this.resizableRightEl.nativeElement, 'touchstart')
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'right'))
+			)
+
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.resizableBottomEl.nativeElement, 'mousedown'),
+					fromEvent(this.resizableBottomEl.nativeElement, 'touchstart')
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'bottom'))
+			)
+
+			this.subscriptions.push(
+				merge(
+					fromEvent(this.resizableCornerEl.nativeElement, 'mousedown'),
+					fromEvent(this.resizableCornerEl.nativeElement, 'touchstart')
+				)
+				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'both'))
+			)
 		});
 		// TODO -> check why this setHeight is called here
 		// this.parent.getConfiguration().setHeight(this.getHeight());
 	}
 
 	public ngOnDestroy(): void {
-		this.eventDestroyHooks.forEach(destroyFn => destroyFn());
+		this.subscriptions.forEach(subscription => subscription.unsubscribe());
+		this.subscriptions.length = 0;
 		this.parent = null;
 		this.modalComponentHost = null;
 	}
@@ -92,8 +125,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		this.modalComponentHost = parent.getHostElementRef();
 	}
 
-	public onMousedown(event: MouseEvent, direction: 'right' | 'bottom' | 'both'): void {
-		event.preventDefault();
+	private onMousedown(event: MouseEvent | TouchEvent, direction: 'right' | 'bottom' | 'both'): void {
 		event.stopPropagation();
 
 		if (this.parent.getConfiguration().isMaximized()) {
@@ -101,7 +133,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		}
 
 		if (this.isResizePossible() &&
-			event.button !== MouseEventButton.Secondary) {
+			(event as MouseEvent).button !== MouseEventButton.Secondary) {
 			this.preparePseudoEl();
 
 			this.mouseDown = true;
@@ -114,7 +146,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		|| this.parent.getConfiguration().isDesktopBehaviorPreserved();
 	}
 
-	public onMouseUp(): void {
+	private onMouseUp(): void {
 		if (this.mouseDown) {
 			this.modalComponentHost.nativeElement.removeChild(this.pseudoEl);
 			this.mouseDown = false;
@@ -137,12 +169,14 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	public onMouseMove(event: MouseEvent): void {
+	private onMouseMove(event:  MouseEvent | TouchEvent): void {
 		if (this.mouseDown) {
+			if (!event.type.includes('touch')) {
+				this.modalHelper.pauseEvent(event as MouseEvent);
+			}
 			this.resizing = true;
 			this.parent.getConfiguration().addClass(ModalClassNames.RESIZING);
 			this.calcNewSize(event);
-			this.modalHelper.pauseEvent(event);
 		}
 	}
 
@@ -156,17 +190,27 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	 * izračun širine ovisno o poziciji pointera i širine ekrana
 	 * @param event
 	 */
-	private calcNewSize(event: MouseEvent) {
+	private calcNewSize(event:  MouseEvent | TouchEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
 		if (this.resizeDirection === 'right' || this.resizeDirection === 'both') {
 			const width = this.parent.getConfiguration().getMinWidth()?.value;
+			const maxWidth = this.parent.getConfiguration().getMaxWidth()?.value;
+
 			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), width);
+			if (maxWidth) {
+				this.width = Math.min(maxWidth, this.width);
+			}
 		}
 
 		if (this.resizeDirection === 'bottom' || this.resizeDirection === 'both') {
 			const height = this.parent.getConfiguration().getMinHeight()?.value;
+			const maxHeight = this.parent.getConfiguration().getMaxHeight()?.value;
+
 			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), height);
+			if (maxHeight) {
+				this.height = Math.min(maxHeight, this.height);
+			}
 		}
 
 		if (this.height) {

@@ -464,7 +464,6 @@ export class ModalConfiguration {
 		if (saveState) {
 			this.savedState.minWidth = width;
 		}
-
 		this.valueChanged.next({ type: ModalConfigurationEventType.MIN_WIDTH_CHANGE, value: width || { value: null } });
 	}
 
@@ -541,6 +540,24 @@ export class ModalConfiguration {
 		this.emitPositionChanged();
 	}
 
+	public setToCenter(): void {
+		const boundbox = this.getBoundbox();
+		const boundboxHeight = boundbox.height;
+		const boundboxWidth = boundbox.width;
+
+		const elHeight = (this.getHeight() || this.getMaxHeight() || this.getMinHeight())?.value;
+		const elWidth = (this.getWidth() || this.getMaxWidth() || this.getMinWidth())?.value;
+
+		if (elHeight && elWidth) {
+			const top = (boundboxHeight / 2) - (elHeight / 2);
+			const left = (boundboxWidth / 2) - (elWidth / 2);
+		
+			this.leftPosition = this.checkBoundBox('left', left, ModalDimensionUnits.PIXEL);
+			this.topPosition = this.checkBoundBox('top', top, ModalDimensionUnits.PIXEL);
+			this.emitPositionChanged();
+		}
+	}
+
 	public getOrder(): number {
 		return this.stackOrder;
 	}
@@ -583,7 +600,10 @@ export class ModalConfiguration {
 			const elWidthObject = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
 			const elWidth = elWidthObject?.value;
 
-			// on mobile move element to center
+			/**
+			 * on mobile and when isPositionToScreenCenterEnabled() is true
+			 * move element to center
+			 */
 			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved && elWidth) {
 				return { value: (boundboxWidth / 2) - (elWidth / 2), units: units };
 			}
