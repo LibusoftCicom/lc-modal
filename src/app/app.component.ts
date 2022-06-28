@@ -18,9 +18,16 @@ export class AppComponent {
 		const modalResult = await this.modal
 			.component(ModalComponentExample2)
 			.title('Example modal')
-			.setHeight(300)
-			.setWidth(400)
+			.preserveDesktopBehavior(true)
 			.draggable(true)
+			.resizable(true)
+			.overlay(false)
+			.showMaximize(false)
+			.showCollapse(true)
+			.positionOnScreenCenter(true)
+			.setWidth(500)
+			.setHeight(600)
+			.setMaxHeight(700)
 			.open();
 		this.result = modalResult.data;
 		this.status = modalResult.modalResult;
