@@ -15,7 +15,10 @@
     "angular 5",
     "angular 6",
     "angular 7",
-    "angular 8"
+    "angular 8",
+    "angular 9",
+    "angular 10",
+    "angular 11"
   ],
   "scripts": {
     "ng": "ng",
