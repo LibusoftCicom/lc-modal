@@ -71,7 +71,6 @@ export class Resizable implements AfterViewInit, OnDestroy {
 				merge(
 					fromEvent(this.document, 'mousemove'),
 					fromEvent(this.document, 'touchmove', { passive: true }),
-	
 				)
 				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseMove(event))
 			);
@@ -80,7 +79,6 @@ export class Resizable implements AfterViewInit, OnDestroy {
 				merge(
 					fromEvent(this.document, 'mouseup'),
 					fromEvent(this.document, 'touchend'),
-	
 				)
 				.subscribe(() => this.onMouseUp())
 			);
@@ -88,15 +86,15 @@ export class Resizable implements AfterViewInit, OnDestroy {
 			this.subscriptions.push(
 				merge(
 					fromEvent(this.resizableRightEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableRightEl.nativeElement, 'touchstart')
+					fromEvent(this.resizableRightEl.nativeElement, 'touchstart', { passive: true })
 				)
 				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'right'))
-			)
+			);
 
 			this.subscriptions.push(
 				merge(
 					fromEvent(this.resizableBottomEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableBottomEl.nativeElement, 'touchstart')
+					fromEvent(this.resizableBottomEl.nativeElement, 'touchstart', { passive: true })
 				)
 				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'bottom'))
 			)
@@ -104,7 +102,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 			this.subscriptions.push(
 				merge(
 					fromEvent(this.resizableCornerEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableCornerEl.nativeElement, 'touchstart')
+					fromEvent(this.resizableCornerEl.nativeElement, 'touchstart', { passive: true })
 				)
 				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'both'))
 			)
