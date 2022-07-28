@@ -55,6 +55,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private _focusElement: HTMLElement;
 
+	private preserveOnCloseFocus: boolean = true;
+
 	private componentReady = false;
 
 	private _previous: this = null;
@@ -434,18 +436,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 			if (this.previous) {
 				this.previous.active = true;
 			} else {
-				// if there isn't any previus modal to focus
-				// use `_focusElement` element to focus it
-				if (this.modals.length === 1 && this._focusElement) {
-					try {
-						// IE/Edge -> prevent scroll to top
-						if ((<any>this._focusElement).setActive) {
-							(<any>this._focusElement).setActive();
-						} else {
-							this._focusElement.focus();
-						}
-					} catch (err) {}
-				}
+				this.tryToFocusOnClose();
 			}
 		}
 
@@ -466,6 +457,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public focusOnClose(el: HTMLElement): this {
 		this._focusElement = el;
+		return this;
+	}
+
+	/**
+	 * method is used to prevent default enabled focus preservation
+	 * if this is disabled, modal will not try to focus any element on close
+	 */
+	public preserveFocus(preserveFocus: boolean = true): this {
+		this.preserveOnCloseFocus = preserveFocus;
 		return this;
 	}
 
@@ -543,6 +543,26 @@ export class ModalFactory implements IModal<ModalFactory> {
 	public preserveDesktopBehavior(isPreserved: boolean = true): this {
 		this.configuration.setPreserveDesktopBehavior(isPreserved);
 		return this;
+	}
+
+	private tryToFocusOnClose(): void {
+		console.log('tryToFocusOnClose');
+		if (this.preserveOnCloseFocus !== true) {
+			return;
+		}
+
+		// if there isn't any previus modal to focus
+		// use `_focusElement` element to focus it
+		if (this.modals.length === 1 && this._focusElement) {
+			try {
+				// IE/Edge -> prevent scroll to top
+				if ((<any>this._focusElement).setActive) {
+					(<any>this._focusElement).setActive();
+				} else {
+					this._focusElement.focus();
+				}
+			} catch (err) {}
+		}
 	}
 
 	/**
