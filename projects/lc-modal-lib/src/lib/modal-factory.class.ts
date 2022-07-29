@@ -558,7 +558,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 				if ((<any>this._focusElement).setActive) {
 					(<any>this._focusElement).setActive();
 				} else {
-					this._focusElement.focus();
+					this._focusElement.focus({ preventScroll: true });
 				}
 			} catch (err) {}
 		}
