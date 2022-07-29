@@ -464,7 +464,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * method is used to prevent default enabled focus preservation
 	 * if this is disabled, modal will not try to focus any element on close
 	 */
-	public preserveFocus(preserveFocus: boolean = true): this {
+	public preserveFocusOnClose(preserveFocus: boolean = true): this {
 		this.preserveOnCloseFocus = preserveFocus;
 		return this;
 	}
@@ -546,7 +546,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	}
 
 	private tryToFocusOnClose(): void {
-		console.log('tryToFocusOnClose');
 		if (this.preserveOnCloseFocus !== true) {
 			return;
 		}
