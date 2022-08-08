@@ -190,13 +190,16 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	 */
 	private calcNewSize(event:  MouseEvent | TouchEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
+		const widthUnit = ModalDimensionUnits.PIXEL;
+		const heightUnit = ModalDimensionUnits.PIXEL;
 
 		if (this.resizeDirection === 'right' || this.resizeDirection === 'both') {
 			const width = this.parent.getConfiguration().getMinWidth()?.value;
 			const maxWidth = this.parent.getConfiguration().getMaxWidth()?.value;
 
 			this.width = Math.max(mousePos.x - this.parent.getPositionLeft(), width);
-			if (maxWidth) {
+			if (maxWidth &&
+				this.parent.getConfiguration().getMaxWidth()?.units === ModalDimensionUnits.PIXEL) {
 				this.width = Math.min(maxWidth, this.width);
 			}
 		}
@@ -206,17 +209,19 @@ export class Resizable implements AfterViewInit, OnDestroy {
 			const maxHeight = this.parent.getConfiguration().getMaxHeight()?.value;
 
 			this.height = Math.max(mousePos.y - this.parent.getPositionTop(), height);
-			if (maxHeight) {
+			// TODO -> use ModalDimensionUnits.PERCENTAGE in calculation
+			if (maxHeight &&
+				this.parent.getConfiguration().getMaxHeight()?.units === ModalDimensionUnits.PIXEL) {
 				this.height = Math.min(maxHeight, this.height);
 			}
 		}
 
 		if (this.height) {
-			this.renderer.setStyle(this.pseudoEl, 'height', this.height.toString() + 'px');
+			this.renderer.setStyle(this.pseudoEl, 'height', `${this.height}${heightUnit}`);
 		}
 
 		if (this.width) {
-			this.renderer.setStyle(this.pseudoEl, 'width', this.width.toString() + 'px');
+			this.renderer.setStyle(this.pseudoEl, 'width', `${this.width}${widthUnit}`);
 		}
 	}
 
@@ -238,12 +243,13 @@ export class Resizable implements AfterViewInit, OnDestroy {
 
 		const minWidth = this.parent.getConfiguration().getMinWidth();
 		const minHeight = this.parent.getConfiguration().getMinHeight();
+
 		if (minWidth) {
-			this.renderer.setStyle(this.pseudoEl, 'min-width', minWidth.toString() + 'px');
+			this.renderer.setStyle(this.pseudoEl, 'min-width', `${minWidth}px`);
 		}
 
 		if (minHeight) {
-			this.renderer.setStyle(this.pseudoEl, 'min-height', minHeight.toString() + 'px');
+			this.renderer.setStyle(this.pseudoEl, 'min-height', `${minHeight}px`);
 		}
 
 		const top = this.parent.getPositionTop();
