@@ -551,7 +551,7 @@ export class ModalConfiguration {
 		if (elHeight && elWidth) {
 			const top = (boundboxHeight / 2) - (elHeight / 2);
 			const left = (boundboxWidth / 2) - (elWidth / 2);
-		
+
 			this.leftPosition = this.checkBoundBox('left', left, ModalDimensionUnits.PIXEL);
 			this.topPosition = this.checkBoundBox('top', top, ModalDimensionUnits.PIXEL);
 			this.emitPositionChanged();
