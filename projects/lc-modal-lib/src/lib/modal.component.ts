@@ -205,6 +205,11 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 			this.modalConfiguration.setMinWidth({ value: width, units: ModalDimensionUnits.PIXEL });
 		}
 
+		if (!this.modalConfiguration.getWidth()) {
+			const widthDimension = this.modalConfiguration.getMinWidth();
+			this.modalConfiguration.setWidth({ value: widthDimension.value, units: widthDimension.units });
+		}
+
 		/**
 		 * due to the resize it is necessary to set the min-size,
 		 * but it must not exceed 100% of the page height
@@ -215,8 +220,14 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 				this.modalConfiguration.setMinHeight({ value: this.getHeight(), units: ModalDimensionUnits.PIXEL });
 			} else {
 				this.modalConfiguration.setMinHeight({ value: 90, units: ModalDimensionUnits.PERCENTAGE });
+				this.modalConfiguration.setHeight({ value: 90, units: ModalDimensionUnits.PERCENTAGE });
 				this.modalConfiguration.setTopPosition(0);
 			}
+		}
+
+		if (!this.modalConfiguration.getHeight()) {
+			const heightDimension = this.modalConfiguration.getMinHeight();
+			this.modalConfiguration.setHeight({ value: heightDimension.value, units: heightDimension.units });
 		}
 
 		/**
