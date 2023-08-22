@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ModalEvent } from './modal-event.class';
 import type { ModalFactory } from './modal-factory.class';
 
@@ -12,7 +12,11 @@ export enum ModalEventType {
 /**
  * @deprecated Use ModalEventType instead
  */
-export const IModalResult = ModalEventType;
+export enum IModalResult {
+	Cancel = 0,
+	Confirm = 1,
+	Reject = 2
+}
 
 export type IModalResultData<T> = ModalEvent<ModalEventType, T>;
 
@@ -41,10 +45,10 @@ export interface IModalComponent<T> {
 	readonly isModal: boolean;
 	readonly params: any;
 	readonly title: string;
-	confirm: (data: T) => Observable<void>;
-	cancel: () => Observable<void>;
-	setTitle: (title: string) => void;
-	preClose?: IClassPreClose;
+	confirm(data: T): Observable<void>;
+	cancel(): Observable<void>;
+	setTitle(title: string): void;
+	preClose?(eventType: ModalEventType | IModalResult): IPreCloseReturn;
 }
 export interface IModalDimensions {
 	height?: number;
@@ -56,8 +60,11 @@ export abstract class BaseModalComponent<T = any> implements IModalComponent<T> 
 	isModal: boolean;
 	params: any;
 	title: string;
-	confirm: (data: T) => Observable<void>;
-	cancel: () => Observable<void>;
-	setTitle: (title: string) => void;
-	preClose?: IClassPreClose;
+	public confirm(data: T): Observable<void> {
+		return of();
+	}
+	public cancel(): Observable<void> {
+		return of();
+	}
+	public setTitle(title: string): void {}
 }
