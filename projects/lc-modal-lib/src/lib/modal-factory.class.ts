@@ -8,6 +8,7 @@ import {
 	IModalResolve,
 	IPreOpen,
 	ModalEventType,
+	IModalResult,
 } from './modal-types.class';
 import { ModalConfig } from './modal-config.class';
 
@@ -378,8 +379,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 * close modal with confirmation and custom result
 	 * also return Observable object which will notify subscriptions about successful pre closing
 	 */
-	public close(data: any, eventType: ModalEventType): Observable<void> {
-		return this.performClosing(eventType, data);
+	public close(data: any, eventType: ModalEventType | IModalResult): Observable<void> {
+		return this.performClosing(eventType as number, data);
 	}
 
 	/**
