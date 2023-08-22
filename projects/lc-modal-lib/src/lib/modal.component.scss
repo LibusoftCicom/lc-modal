@@ -23,7 +23,6 @@
 	height: 0;
 }
 
-:host(.message-box),
 :host(.overlay-active) {
 	background: rgba(0, 0, 0, 0.4);
 }
@@ -36,7 +35,6 @@
 	}
 }
 
-:host(.message-box),
 :host(.active) {
 	z-index: 10002;
 }

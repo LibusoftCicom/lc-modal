@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
-import { Modal, IModalResult } from '@libusoftcicom/lc-modal';
+import { Modal } from '@libusoftcicom/lc-modal';
 import { ModalComponentExample } from './modal-example/modal-example.component';
 import { ModalComponentExample2 } from './modal-example2/modal-example.component';
-import { IModalResultData } from 'projects/lc-modal-lib/src/lc-modal';
 
 @Component({
 	selector: 'app-root',
@@ -12,11 +11,12 @@ import { IModalResultData } from 'projects/lc-modal-lib/src/lc-modal';
 export class AppComponent {
 	public result: Object;
 	public status: Object;
+
 	constructor(private modal: Modal) {}
 
 	public async example() {
 		const modalResult = await this.modal
-			.component(ModalComponentExample2)
+			.loadComponent(async () => import('./modal-example2/modal-example.component').then((m) => m.ModalComponentExample2))
 			.title('Example modal')
 			.preserveDesktopBehavior(true)
 			.draggable(true)
@@ -28,9 +28,18 @@ export class AppComponent {
 			.setWidth(500)
 			.setHeight(600)
 			.setMaxHeight(700)
+			.preOpen(async () => {
+				return true;
+			})
+			.params({
+				id: 12,
+				selected: 1,
+				data: {},
+				GUID: 'ddef390b-3b5c-4341-a192-393adbf04c16'
+			})
 			.open();
 		this.result = modalResult.data;
-		this.status = modalResult.modalResult;
+		this.status = modalResult.type;
 	}
 
 	public async modalExample() {
@@ -40,7 +49,7 @@ export class AppComponent {
 			.positionOnScreenCenter(true)
 			.draggable(false)
 			.setOrder(50000)
-			.setClass('message-box')
+			.addClass('message-box')
 			.component(ModalComponentExample2);
 
 			modal.closeOnlyByUser = false;
@@ -58,7 +67,7 @@ export class AppComponent {
 			.showMaximize(true)
 			.open();
 		this.result = result.data;
-		this.status = result.modalResult;
+		this.status = result.type;
 	}
 
 	public async fullScreenModal() {
@@ -70,7 +79,7 @@ export class AppComponent {
 			.setFullScreen()
 			.open();
 		this.result = modalResult.data;
-		this.status = modalResult.modalResult;
+		this.status = modalResult.type;
 	}
 
 	public async withoutHeaderModal() {
@@ -80,7 +89,7 @@ export class AppComponent {
 			.setWidth(700)
 			.open();
 		this.result = modalResult.data;
-		this.status = modalResult.modalResult;
+		this.status = modalResult.type;
 	}
 
 	public async withoutOverlayModal() {
@@ -93,7 +102,7 @@ export class AppComponent {
 			.showMaximize(true)
 			.open();
 		this.result = modalResult.data;
-		this.status = modalResult.modalResult;
+		this.status = modalResult.type;
 	}
 
 	public async withSizeLimitModal() {
@@ -109,7 +118,7 @@ export class AppComponent {
 			.showMaximize(true)
 			.open();
 		this.result = result.data;
-		this.status = result.modalResult;
+		this.status = result.type;
 	}
 
 	public async withCollapseModal() {
@@ -126,6 +135,6 @@ export class AppComponent {
 			.preserveDesktopBehavior()
 			.open();
 		this.result = result.data;
-		this.status = result.modalResult;
+		this.status = result.type;
 	}
 }
