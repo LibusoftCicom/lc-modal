@@ -1,4 +1,4 @@
-import { Injectable, reflectComponentType } from '@angular/core';
+import { ComponentFactoryResolver, Injectable } from '@angular/core';
 import type { ModalFactory } from './modal-factory.class';
 
 export interface IModalComponentInputBinder {
@@ -17,22 +17,24 @@ export interface IModalComponentInputBinder {
 export class ModalComponentInputBinder {
     public bind(outlet: ModalFactory): void {
         const componentClass = outlet['componentClassRef'];
-        const component = outlet['componentInstanceRef'];
+        const component = outlet.componentRef;
+        const injector = outlet['injector'];
 
         if (!componentClass || !component) {
             return;
         }
 
-        const mirror = reflectComponentType(componentClass);
+        const resolver = injector.get(ComponentFactoryResolver);
+        const metadata = resolver.resolveComponentFactory(componentClass);
 
-        if (!mirror) {
+        if (!metadata) {
             console.error(`It's not possible to retrieve metadata for the provided component ${componentClass}.`);
             return;
         }
 
         const data = {...outlet['paramsValue'], ...outlet['additionalParamsValue'], ...outlet['resolvedData']};
-        for (const {templateName} of mirror.inputs) {
-            component.setInput(templateName, data[templateName]);
+        for (const {propName, templateName} of metadata.inputs) {
+            component[propName] = data[templateName] || data[propName];
         }
     }
 }
