@@ -18,7 +18,12 @@ export enum IModalResult {
 	Reject = 2
 }
 
-export type IModalResultData<T> = ModalEvent<ModalEventType, T>;
+/**
+ * @deprecated Use ModalEvent instead
+ */
+export interface ITempModalEvent<T> {data: T, modalResult: IModalResult};
+
+export type IModalResultData<T> = ModalEvent<ModalEventType, T> | ITempModalEvent<T>;
 
 export interface IModal<T> {
 	title: (title: string) => T;
