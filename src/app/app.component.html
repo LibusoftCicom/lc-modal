@@ -147,7 +147,10 @@ import &#123; BaseModalComponent &#125; from '@libusoftcicom/lc-modal';
    &lt;/form&gt;
    `
 &#125;)
-export class ModalComponentExample extends BaseModalComponent &#123;&#125;
+export class ModalComponentExample extends BaseModalComponent &#123;
+   @Import()
+   public data; // bind data from `params()` method
+&#125;
 </code></pre>
 			  </li>
               <li class="list-group-item">
@@ -184,6 +187,9 @@ export class ModalComponentExample extends BaseModalComponent &#123;&#125;
       .setWidth(700)
       .draggable(true)
       .showMaximize(true)
+      .params(&#123;
+        data: &#123; foo: 1, bar: 2 &#125;
+      &#125;)
       .open();
               </code>
               </pre>
@@ -211,7 +217,7 @@ this.modal
   .setWidth(700)
   .setMinWidth(400)
   .setMaxWidth(700)
-  .params(  &#123; &#125; || [] || String || Number || Boolean)
+  .params(&#123; &#125;)
   .draggable(false)
   .resizable(true)
   .closeOnClick()
@@ -225,6 +231,7 @@ this.modal
   .setClass('test-class')
   .removeClass('test-class')
   .component(ModalComponentExample)
+  .loadCompone(async () => import('./modal-example2/modal-example.component').then((m) => m.ModalComponentExample2))
   .draggable(true)
   .showMaximize(true)
   .onlyLastModalActive(false)
@@ -234,68 +241,53 @@ this.modal
         </div>
         <div class="card-body col-sm-6">
           <dl class="row">
-            <dt class="col-sm-3">title</dt>
-            <dd class="col-sm-9">Set modal title.</dd>
+            <dt class="col-sm-4">title</dt>
+            <dd class="col-sm-8">Set modal title.</dd>
 
-            <dt class="col-sm-3">setHeight</dt>
-            <dd class="col-sm-9">Set modal height.</dd>
+            <dt class="col-sm-4">setHeight</dt>
+            <dd class="col-sm-8">Set modal height.</dd>
 
-            <dt class="col-sm-3">setWidth</dt>
-            <dd class="col-sm-9">Set modal width.</dd>
+            <dt class="col-sm-4">setWidth</dt>
+            <dd class="col-sm-8">Set modal width.</dd>
 
-            <dt class="col-sm-3 ">draggable</dt>
-            <dd class="col-sm-9">Enable/disable changing modal position.</dd>
-            <dt class="col-sm-3 ">
-              resizable</dt>
-            <dd class="col-sm-9">Enable/disable changing modal size.</dd>
-            <dt class="col-sm-3 ">
-              closeOnClick</dt>
-            <dd class="col-sm-9">Enable/disable closing modal on background click.</dd>
-            <dt class="col-sm-3 ">
-              offsetLeft</dt>
-            <dd class="col-sm-9">Set modal position from left side of browser window.</dd>
-            <dt class="col-sm-3 ">
-              offsetTop</dt>
-            <dd class="col-sm-9">Set modal position from top of browser window.</dd>
-            <dt class="col-sm-3 ">
-              closeOnError</dt>
-            <dd class="col-sm-9">Enable/disable closing modal on error.</dd>
+            <dt class="col-sm-4">draggable</dt>
+            <dd class="col-sm-8">Enable/disable changing modal position.</dd>
+            <dt class="col-sm-4 ">resizable</dt>
+            <dd class="col-sm-8">Enable/disable changing modal size.</dd>
+            <dt class="col-sm-4">closeOnClick</dt>
+            <dd class="col-sm-8">Enable/disable closing modal on background click.</dd>
+            <dt class="col-sm-4">offsetLeft</dt>
+            <dd class="col-sm-8">Set modal position from left side of browser window.</dd>
+            <dt class="col-sm-4">offsetTop</dt>
+            <dd class="col-sm-8">Set modal position from top of browser window.</dd>
+            <dt class="col-sm-4">closeOnError</dt>
+            <dd class="col-sm-8">Enable/disable closing modal on error.</dd>
 
+            <dt class="col-sm-4">preClose</dt>
+            <dd class="col-sm-8">Set function that is executed before closing modal.</dd>
+            <dt class="col-sm-4">showClose</dt>
+            <dd class="col-sm-8">Show/hide modal close button.</dd>
+            <dt class="col-sm-4">confirm</dt>
+            <dd class="col-sm-8">Close modal with confirmation.</dd>
+            <dt class="col-sm-4">cancel</dt>
+            <dd class="col-sm-8">Close modal without confirmation.</dd>
+            <dt class="col-sm-4">setClass</dt>
+            <dd class="col-sm-8">Set custom css class on modal.</dd>
+            <dt class="col-sm-4">removeClass</dt>
+            <dd class="col-sm-8">Remove custom css class on modal.</dd>
 
-            <dt class="col-sm-3 ">
-              preClose</dt>
-            <dd class="col-sm-9">Set function that is executed before closing modal.</dd>
-            <dt class="col-sm-3 ">
-              showClose</dt>
-            <dd class="col-sm-9">Show/hide modal close button.</dd>
-            <dt class="col-sm-3 ">
-              confirm</dt>
-            <dd class="col-sm-9">Close modal with confirmation.</dd>
-            <dt class="col-sm-3 ">
-              cancel</dt>
-            <dd class="col-sm-9">Close modal without confirmation.</dd>
-            <dt class="col-sm-3 ">
-              setClass</dt>
-            <dd class="col-sm-9">Set custom css class on modal.</dd>
-            <dt class="col-sm-3 ">
-              removeClass</dt>
-            <dd class="col-sm-9">Remove custom css class on modal.</dd>
-
-            <dt class="col-sm-3 ">
-              component</dt>
-            <dd class="col-sm-9">Set modal component.</dd>
-            <dt class="col-sm-3 ">
-              draggable</dt>
-            <dd class="col-sm-9">Enable/disable modal dragging.</dd>
-            <dt class="col-sm-3 ">
-              showMaximize</dt>
-            <dd class="col-sm-9">Show/hide modal maximize button.</dd>
-            <dt class="col-sm-3 ">
-              onlyLastModalActive</dt>
-            <dd class="col-sm-9">Enable/disable onlyLastModalActive.</dd>
-            <dt class="col-sm-3 ">
-              open</dt>
-            <dd class="col-sm-9">Open modal.</dd>
+            <dt class="col-sm-4">component</dt>
+            <dd class="col-sm-8">Set modal component.</dd>
+            <dt class="col-sm-4">loadComponent</dt>
+            <dd class="col-sm-8">Dynamic component loading.</dd>
+            <dt class="col-sm-4">draggable</dt>
+            <dd class="col-sm-8">Enable/disable modal dragging.</dd>
+            <dt class="col-sm-4">showMaximize</dt>
+            <dd class="col-sm-8">Show/hide modal maximize button.</dd>
+            <dt class="col-sm-4">onlyLastModalActive</dt>
+            <dd class="col-sm-8">Enable/disable onlyLastModalActive.</dd>
+            <dt class="col-sm-4">open</dt>
+            <dd class="col-sm-8">Open modal.</dd>
 
           </dl>
         </div>

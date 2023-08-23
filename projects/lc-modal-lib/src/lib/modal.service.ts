@@ -1,9 +1,10 @@
-import { Injectable, ComponentFactoryResolver, Injector, ViewContainerRef, Optional, SkipSelf } from '@angular/core';
+import { Injectable, ComponentFactoryResolver, Injector, ViewContainerRef, Optional, SkipSelf, Type } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ModalFactory } from './modal-factory.class';
 import { IModal } from './modal-types.class';
-import { ModalViewModel } from './modal-view-model.class';
+import { ModalViewEvent, ModalViewModel } from './modal-view-model.class';
 import { ModalConfig } from './modal-config.class';
+import { filter, map } from 'rxjs/operators';
 
 @Injectable()
 export class Modal implements IModal<ModalFactory> {
@@ -33,7 +34,7 @@ export class Modal implements IModal<ModalFactory> {
 	 * Set modal params
 	 * @param params
 	 */
-	public params<T>(params: T): ModalFactory {
+	public params<T extends object>(params: T): ModalFactory {
 		return this.setModal().params(params);
 	}
 
@@ -45,89 +46,25 @@ export class Modal implements IModal<ModalFactory> {
 		return this.setModal().component(component);
 	}
 
-	private getDataModel(modal: Modal): ModalViewModel {
-		if (!modal.model.viewContainerRef && modal.parent) {
-			return this.getDataModel(modal.parent);
-		}
-
-		return modal.model;
-	}
-
-	private setModal() {
-		const id = this.model.counter;
-		/**
-		 * link parent model with setting reference
-		 * so we don't need to look for them each time
-		 */
-		if (!this.model.viewContainerRef) {
-			this.model = this.getDataModel(this);
-		}
-
-		const viewContainerRef = this.model.viewContainerRef;
-
-		/**
-		 * Each modal instance should be placed to <dialog-anchor>, either at the root
-		 * or in <dialog-anchor> registered in lazy-loaded module.
-		 *
-		 * Once lazy-loaded module instanciate new `Modal` serivse should try to register
-		 * <dialog-anchor> if there isn't any try to get parent Modal service and use his `viewContainerRef`
-		 *
-		 * module --|
-		 * 	|- Modal service (new instance)
-		 * 	|- <dialog-anchor> (new instance)
-		 * 			|
-		 * 			|- module
-		 * 				|- Modal service (use parent)
-		 * 				|- <dialog-anchor> (use parent)
-		 * 			|
-		 * 			|- lazy-loaded module
-		 * 				|- Modal service (new instance)
-		 * 				|- <dialog-anchor> (new instance)
-		 * 			|
-		 * 			|- lazy-loaded module
-		 * 				|- Modal service (new instance with parent model)
-		 *				|- <dialog-anchor> (use parent)
-		 */
-
-		// to each instance we need to provide Injector
-		const modal = new ModalFactory(
-			this.cfr,
-			viewContainerRef,
-			id,
-			this.injector,
-			this.model.modals,
-			this.config
-		);
-
-		// set after view ready
-		modal.afterViewInit(() => this.model.openChanges.next());
-
-		// set reference to previous element so we don't
-		// need filter array later to find previous element
-		modal.previous = this.model.last();
-
-		this.model.add(modal);
-
-		modal.setDestroyFn(() => {
-			this.model.remove(modal);
-			this.model.closeChanges.next();
-		});
-
-		return modal;
+	/**
+	 * Define a function for dynamically fetching a component.
+	 */
+	public loadComponent<C>(componentLoader: () => Promise<C>): ModalFactory {
+		return this.setModal().loadComponent(componentLoader);
 	}
 
 	/**
 	 * track modal closing changes
 	 */
-	public get closeChange() {
-		return this.model.closeChanges.asObservable();
+	public get closeChange(): Observable<void> {
+		return this.model.stateChanges.pipe(filter(event => event === ModalViewEvent.CLOSE), map(() => undefined));
 	}
 
 	/**
 	 * track modal opening changes
 	 */
-	public get openChange() {
-		return this.model.openChanges.asObservable();
+	public get openChange(): Observable<void> {
+		return this.model.stateChanges.pipe(filter(event => event === ModalViewEvent.OPEN), map(() => undefined));
 	}
 
 	/**
@@ -209,5 +146,66 @@ export class Modal implements IModal<ModalFactory> {
 	 */
 	public get length(): number {
 		return this.model.length;
+	}
+
+	private getDataModel(modal: Modal): ModalViewModel {
+		if (!modal.model.viewContainerRef && modal.parent) {
+			return this.getDataModel(modal.parent);
+		}
+
+		return modal.model;
+	}
+
+	private setModal() {
+		const id = this.model.counter;
+		/**
+		 * link parent model with setting reference
+		 * so we don't need to look for them each time
+		 */
+		if (!this.model.viewContainerRef) {
+			this.model = this.getDataModel(this);
+		}
+
+		const viewContainerRef = this.model.viewContainerRef;
+
+		/**
+		 * Each modal instance should be placed to <dialog-anchor>, either at the root
+		 * or in <dialog-anchor> registered in lazy-loaded module.
+		 *
+		 * Once lazy-loaded module instanciate new `Modal` serivse should try to register
+		 * <dialog-anchor> if there isn't any try to get parent Modal service and use his `viewContainerRef`
+		 *
+		 * module --|
+		 * 	|- Modal service (new instance)
+		 * 	|- <dialog-anchor> (new instance)
+		 * 			|
+		 * 			|- module
+		 * 				|- Modal service (use parent)
+		 * 				|- <dialog-anchor> (use parent)
+		 * 			|
+		 * 			|- lazy-loaded module
+		 * 				|- Modal service (new instance)
+		 * 				|- <dialog-anchor> (new instance)
+		 * 			|
+		 * 			|- lazy-loaded module
+		 * 				|- Modal service (new instance with parent model)
+		 *				|- <dialog-anchor> (use parent)
+		 */
+
+		// to each instance we need to provide Injector
+		const modal = new ModalFactory(
+			this.cfr,
+			viewContainerRef,
+			id,
+			this.injector,
+			this.config
+		);
+
+		// set reference to previous element so we don't
+		// need filter array later to find previous element
+		modal.previous = this.model.last();
+
+		this.model.add(modal);
+		return modal;
 	}
 }

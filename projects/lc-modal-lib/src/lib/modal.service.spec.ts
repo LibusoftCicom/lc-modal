@@ -15,7 +15,7 @@ import {
 	tick
 } from '@angular/core/testing';
 
-import { ModalModule, IModalResult, Modal } from './modal.module';
+import { ModalModule, IModalResult, Modal, ModalEventType } from './modal.module';
 import { of } from 'rxjs';
 
 const preCloseSpyFunctions = jasmine.createSpy('preCloseSpyFunctions');
@@ -133,10 +133,11 @@ describe('ModalComponentHost', () => {
 			fixture.detectChanges();
 			tick(150);
 
-			expect(SpyFunctions.onConfirm).toHaveBeenCalledWith({
+			expect(SpyFunctions.onConfirm).toHaveBeenCalledWith(jasmine.objectContaining({
 				modalResult: IModalResult.Confirm,
+				type: ModalEventType.Confirm,
 				data: null
-			});
+			}));
 			expect(SpyFunctions.onCancel).not.toHaveBeenCalled();
 		})
 	);
@@ -154,10 +155,11 @@ describe('ModalComponentHost', () => {
 			fixture.detectChanges();
 			tick(150);
 
-			expect(SpyFunctions.onConfirm).toHaveBeenCalledWith({
+			expect(SpyFunctions.onConfirm).toHaveBeenCalledWith(jasmine.objectContaining({
 				modalResult: IModalResult.Cancel,
+				type: ModalEventType.Cancel,
 				data: null
-			});
+			}));
 			expect(SpyFunctions.onCancel).not.toHaveBeenCalled();
 		})
 	);

@@ -1,14 +1,20 @@
 import { ViewContainerRef } from '@angular/core';
 import { ModalFactory } from './modal-factory.class';
 import { Observable, Subject } from 'rxjs';
+import { ACTIVE_MODAL } from './modal-active-model.class';
+
+export enum ModalViewEvent {
+	CLOSE,
+	OPEN
+}
 
 export class ModalViewModel {
 	public _viewContainerRef: ViewContainerRef;
 	private _modals: ModalFactory[] = [];
 	public counter = 0;
 
-	public readonly closeChanges: Subject<any> = new Subject();
-	public readonly openChanges: Subject<any> = new Subject();
+	private readonly events: Subject<ModalViewEvent> = new Subject();
+	public readonly stateChanges: Observable<ModalViewEvent> = this.events.asObservable();
 
 	public get viewContainerRef() {
 		return this._viewContainerRef;
@@ -22,6 +28,30 @@ export class ModalViewModel {
 	}
 
 	public add(modal: ModalFactory) {
+		// set after view ready
+		modal.afterViewInit(() => this.events.next(ModalViewEvent.OPEN));
+		modal.setDestroyFn((force) => {
+			if (force !== true && modal.previous) {
+				ACTIVE_MODAL.set(modal.previous);
+				/**
+				 * if the modal previous is the one that has an overlay, and this one doesn't then
+				 * you must put the focus on the last one
+				 */
+				// if (!modal.overlayVisible
+				// 	&& (modal.previous?.overlayVisible)) {
+				// 		ACTIVE_MODAL.set(this.last());
+				// 	} else {
+				// 		ACTIVE_MODAL.set(modal.previous);
+				// 	}
+			}
+
+			if (force === true || !modal.previous) {
+				ACTIVE_MODAL.clear();
+			}
+
+			this.remove(modal);
+		});
+
 		/**
 		 * calculate z-index
 		 * it need to be different from the last opened modal
@@ -47,7 +77,12 @@ export class ModalViewModel {
 			this._modals[index + 1].previous = this._modals[index - 1];
 		}
 
+		modal.afterViewInit(null);
+		modal.setDestroyFn(null);
+		modal.afterInit(null);
+
 		this._modals.splice(index, 1);
+		this.events.next(ModalViewEvent.CLOSE);
 	}
 
 	/**
@@ -70,7 +105,7 @@ export class ModalViewModel {
 	 * returns active modal
 	 */
 	public active(): ModalFactory {
-		return this._modals.find((model) => model.active);
+		return ACTIVE_MODAL.get();
 	}
 
 	/**
