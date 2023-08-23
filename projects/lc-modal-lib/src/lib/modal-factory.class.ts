@@ -313,7 +313,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 *
 	 * @return  confirm and cancel callbacks
 	 */
-	public async open<D>(): Promise<ModalEvent<ModalEventType, D>> {
+	public async open<D = any>(): Promise<ModalEvent<ModalEventType, D>> {
 		if (!this.componentClassRef && !this.componentClassLoader) {
 			throw new Error(`Before calling open() you need to set component() or loadComponent()`);
 		}
