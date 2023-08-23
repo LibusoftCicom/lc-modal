@@ -1,7 +1,7 @@
 import { IModalResult, ModalEventType } from "./modal-types.class";
 
 
-export class ModalEvent<T extends ModalEventType, D> {
+export class ModalEvent<T extends ModalEventType, D = any> {
     /**
 	 * @deprecated Use 'type' instead
 	 */
