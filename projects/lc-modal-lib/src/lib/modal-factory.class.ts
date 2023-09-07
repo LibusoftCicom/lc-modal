@@ -667,14 +667,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 		this.configuration
 			.valueChanges
 			.pipe(filter(({ type }) => type === ModalConfigurationEventType.VISIBILITY_CHANGE))
-			.subscribe(({ value }) => { 
+			.subscribe(({ value }) => {
 				// is visible
 				if (value) {
 					ACTIVE_MODAL.set(this);
 				} else {
-					ACTIVE_MODAL.set(this.previous);
+					const previous = this.findVisiblePrevious(this);
+					ACTIVE_MODAL.set(previous);
 				}
-			 });
+			});
 
 		// and set this to be active
 		ACTIVE_MODAL.set(this);
@@ -689,6 +690,16 @@ export class ModalFactory implements IModal<ModalFactory> {
 		}
 
 		// hostComponentInstance.autoFocus();
+	}
+
+	private findVisiblePrevious(modalFactory: ModalFactory): ModalFactory | null {
+		if (!modalFactory.previous) {
+			return null;
+		}
+		if (modalFactory.previous.isVisible()) {
+			return modalFactory.previous;
+		}
+		return this.findVisiblePrevious(modalFactory.previous);
 	}
 
 	private isCalcRequired(): boolean {
