@@ -19,7 +19,6 @@ export class ModalActiveModel {
             return;
         }
 
-
         /**
          * If the modal we want to bring into focus has an overlay,
          * and the currently active one doesn't, it's not possible to bring it into focus.
@@ -40,7 +39,7 @@ export class ModalActiveModel {
          * that the previously active element
          * already has the highest zIndex.
          */
-        const zIndex = Math.max(this.activeModal?.getOrder() || 0, modal.getOrder(), DEFAULT_Z_INDEX);
+        const zIndex = Math.max((this.activeModal?.getOrder() || 0), (modal?.getOrder() || 0), DEFAULT_Z_INDEX);
 
         /**
          * Remove the "active" class from the previously active element.
@@ -51,18 +50,18 @@ export class ModalActiveModel {
          * move only active modal to the top by increasing the maximum z-index by 1
          * and do that only if this modal already has not the highest z-index
          */
-        if (modal.getOrder() <= zIndex) {
+        if (modal?.getOrder() <= zIndex) {
             modal.setOrder(zIndex + 1);
         }
 
         /**
          * mark with clas name active element
          */
-        modal.addClass(ModalClassNames.ACTIVE);
+        modal?.addClass(ModalClassNames.ACTIVE);
         /**
          * auto focus element
          */
-        modal.hostComponentRef.autoFocus();
+        modal?.hostComponentRef.autoFocus();
 
         /**
          * mark new element as active
@@ -76,7 +75,7 @@ export class ModalActiveModel {
 		 * if element have overlay and if same element is not last
 		 * we can't place it above all other with overlay
 		 */
-        if (modal['configuration'].isOverlayVisible()) {
+        if (modal?.['configuration'].isOverlayVisible()) {
             /**
              * Remove the overlay only if the element with the overlay is being replaced.
              */
