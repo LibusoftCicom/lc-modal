@@ -88,6 +88,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	public ngOnInit(): void {
+		setTimeout(() => this.autoFocus(), 100);
 		this.registerEventListeners();
 		this.setInitialValues();
 	}
@@ -97,7 +98,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	public ngAfterViewInit(): void {
-		setTimeout(() => this.autoFocus(), 100);
 		this.setInitialPosition();
 		this.setInitialMinSizes();
 	}
