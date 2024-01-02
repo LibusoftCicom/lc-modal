@@ -13,7 +13,7 @@ import {
 	AfterContentInit,
 	Type
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import {fromEvent, Subscription} from 'rxjs';
 import { ModalConfig, MODAL_DEFAULT_SELECTOR } from './modal-config.class';
 import { IHostModalComponent } from './modal-component.interface';
 import {
@@ -298,6 +298,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		}
 	}
 
+	public setActive(event: MouseEvent): void { }
+
 	private registerEventListeners(): void {
 		// on resize we clear this._boundBox
 		this.eventDestroyHooks.push(
@@ -317,6 +319,11 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 					configuration.setTopPosition(this.getPositionTop());
 				}
 			})
+		);
+
+		this.eventDestroySubscriptions.push(
+			fromEvent<PointerEvent>(this.hostElementRef.nativeElement, 'pointerdown', { capture: true })
+				.subscribe(event => this.setActive(event))
 		);
 
 		this.eventDestroySubscriptions.push(
@@ -583,9 +590,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	private changeStackOrder(index: number) {
 		this.renderer.setStyle(this.hostElementRef.nativeElement, 'z-index', index);
 	}
-
-	@HostListener('mousedown', ['$event'])
-	public setActive(event: MouseEvent): void { }
 
 	public onMouseClose(event: MouseEvent): void {
 		event.stopPropagation();
