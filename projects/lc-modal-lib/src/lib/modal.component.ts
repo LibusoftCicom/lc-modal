@@ -298,7 +298,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		}
 	}
 
-	public setActive(event: MouseEvent): void { }
+	public setActive(event: PointerEvent): void { }
 
 	private registerEventListeners(): void {
 		// on resize we clear this._boundBox
@@ -591,7 +591,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		this.renderer.setStyle(this.hostElementRef.nativeElement, 'z-index', index);
 	}
 
-	public onMouseClose(event: MouseEvent): void {
+	public onMouseClose(event: PointerEvent): void {
 		event.stopPropagation();
 		if (this.closeFn) {
 			this.closeFn();
@@ -599,7 +599,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	@HostListener('click', ['$event'])
-	public documentCloseListener(event: MouseEvent): void {
+	public documentCloseListener(event: PointerEvent): void {
 		const targetEl = event.target || event.srcElement;
 
 		if (this.closeByDocumentEnabled && this.closeFn && this.hostElementRef.nativeElement === targetEl) {

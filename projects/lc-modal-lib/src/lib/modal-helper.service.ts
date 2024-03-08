@@ -34,20 +34,15 @@ export class ModalHelper {
 		return this.eventManager.addGlobalEventListener('window', 'resize', fn);
 	}
 
-	public pauseEvent(e: MouseEvent): void {
+	public pauseEvent(e: PointerEvent): void {
 		e.stopPropagation();
-		e.preventDefault();
 		e.stopImmediatePropagation();
 	}
 
-	public getMousePosition(event: MouseEvent | TouchEvent): { x: number; y: number } {
-		const pos =
-			(<TouchEvent>event).touches && (<TouchEvent>event).touches[0]
-				? (<TouchEvent>event).touches[0]
-				: <MouseEvent>event;
+	public getMousePosition(event: PointerEvent): { x: number; y: number } {
 		return {
-			x: pos.clientX,
-			y: pos.clientY
+			x: event.clientX,
+			y: event.clientY
 		};
 	}
 }

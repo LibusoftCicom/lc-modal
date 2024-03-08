@@ -37,7 +37,7 @@ export interface IHostModalComponent {
 	getPositionLeft(): number;
 	getPositionTop(): number;
 
-	documentCloseListener(event: MouseEvent): void;
+	documentCloseListener(event: PointerEvent): void;
 	autoFocus(): void;
 	trapFocusKeydown(event: KeyboardEvent): void;
 
