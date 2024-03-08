@@ -68,43 +68,26 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.document, 'mousemove'),
-					fromEvent(this.document, 'touchmove', { passive: true }),
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseMove(event))
+				fromEvent(this.document, 'pointermove', { passive: true }).subscribe((event: PointerEvent) => this.onMouseMove(event))
 			);
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.document, 'mouseup'),
-					fromEvent(this.document, 'touchend'),
-				)
-				.subscribe(() => this.onMouseUp())
+				fromEvent(this.document, 'pointerup').subscribe(() => this.onMouseUp())
 			);
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.resizableRightEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableRightEl.nativeElement, 'touchstart', { passive: true })
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'right'))
+				fromEvent(this.resizableRightEl.nativeElement, 'pointerdown', { passive: true })
+					.subscribe((event: PointerEvent) => this.onMousedown(event, 'right'))
 			);
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.resizableBottomEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableBottomEl.nativeElement, 'touchstart', { passive: true })
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'bottom'))
+				fromEvent(this.resizableBottomEl.nativeElement, 'pointerdown', { passive: true })
+					.subscribe((event: PointerEvent) => this.onMousedown(event, 'bottom'))
 			)
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.resizableCornerEl.nativeElement, 'mousedown'),
-					fromEvent(this.resizableCornerEl.nativeElement, 'touchstart', { passive: true })
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMousedown(event, 'both'))
+				fromEvent(this.resizableCornerEl.nativeElement, 'pointerdown', { passive: true })
+					.subscribe((event: PointerEvent) => this.onMousedown(event, 'both'))
 			)
 		});
 		// TODO -> check why this setHeight is called here
@@ -123,7 +106,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		this.modalComponentHost = parent.getHostElementRef();
 	}
 
-	private onMousedown(event: MouseEvent | TouchEvent, direction: 'right' | 'bottom' | 'both'): void {
+	private onMousedown(event: PointerEvent, direction: 'right' | 'bottom' | 'both'): void {
 		event.stopPropagation();
 
 		if (this.parent.getConfiguration().isMaximized()) {
@@ -167,10 +150,10 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	private onMouseMove(event:  MouseEvent | TouchEvent): void {
+	private onMouseMove(event:  PointerEvent): void {
 		if (this.mouseDown) {
-			if (!event.type.includes('touch')) {
-				this.modalHelper.pauseEvent(event as MouseEvent);
+			if (event.pointerType === 'mouse') {
+				this.modalHelper.pauseEvent(event);
 			}
 			this.resizing = true;
 			this.parent.getConfiguration().addClass(ModalClassNames.RESIZING);
@@ -188,7 +171,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 	 * izračun širine ovisno o poziciji pointera i širine ekrana
 	 * @param event
 	 */
-	private calcNewSize(event:  MouseEvent | TouchEvent) {
+	private calcNewSize(event:  PointerEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
 		const widthUnit = ModalDimensionUnits.PIXEL;
 		const heightUnit = ModalDimensionUnits.PIXEL;

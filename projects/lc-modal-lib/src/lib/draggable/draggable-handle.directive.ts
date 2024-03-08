@@ -63,29 +63,17 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.document, 'mousemove'),
-					fromEvent(this.document, 'touchmove', { passive: true }),
-	
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseMove(event))
+					fromEvent(this.document, 'pointermove', { passive: true })
+						.subscribe((event: PointerEvent) => this.onMouseMove(event))
 			);
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.document, 'mouseup'),
-					fromEvent(this.document, 'touchend'),
-	
-				)
-				.subscribe(() => this.onMouseUp())
+				fromEvent(this.document, 'pointerup').subscribe(() => this.onMouseUp())
 			);
 
 			this.subscriptions.push(
-				merge(
-					fromEvent(this.elementRef.nativeElement, 'touchstart', { passive: true }),
-					fromEvent(this.elementRef.nativeElement, 'mousedown')
-				)
-				.subscribe((event: MouseEvent | TouchEvent) => this.onMouseDown(event))
+				fromEvent(this.elementRef.nativeElement, 'pointerdown', {passive: true})
+					.subscribe((event: PointerEvent) => this.onMouseDown(event))
 			);
 		});
 	}
@@ -97,7 +85,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		this.modalComponentHost = null;
 	}
 
-	private onMouseDown(event: MouseEvent | TouchEvent): void {
+	private onMouseDown(event: PointerEvent): void {
 		if (this.timeout) {
 			clearTimeout(this.timeout);
 		}
@@ -144,7 +132,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		}
 	}
 
-	private onMouseMove(event: MouseEvent | TouchEvent): void {
+	private onMouseMove(event: PointerEvent): void {
 		if (this.mouseDown) {
 			this.dragging = true;
 			this.parent.setClass();
@@ -201,7 +189,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		this.mouseYDif = y - top;
 	}
 
-	private calcNewPosition(event: MouseEvent | TouchEvent) {
+	private calcNewPosition(event: PointerEvent) {
 		const mousePos = this.modalHelper.getMousePosition(event);
 
 		this.top = mousePos.y - this.mouseYDif;
