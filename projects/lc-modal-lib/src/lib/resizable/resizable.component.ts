@@ -68,7 +68,7 @@ export class Resizable implements AfterViewInit, OnDestroy {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			this.subscriptions.push(
-				fromEvent(this.document, 'pointermove', { passive: true }).subscribe((event: PointerEvent) => this.onMouseMove(event))
+				fromEvent(this.document, 'pointermove', { passive: true, capture: true }).subscribe((event: PointerEvent) => this.onMouseMove(event))
 			);
 
 			this.subscriptions.push(
