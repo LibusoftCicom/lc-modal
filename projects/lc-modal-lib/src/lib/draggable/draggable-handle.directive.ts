@@ -63,7 +63,7 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			this.subscriptions.push(
-					fromEvent(this.document, 'pointermove', { passive: true })
+					fromEvent(this.document, 'pointermove', { passive: true, capture: true })
 						.subscribe((event: PointerEvent) => this.onMouseMove(event))
 			);
 
@@ -134,6 +134,8 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 
 	private onMouseMove(event: PointerEvent): void {
 		if (this.mouseDown) {
+			event.stopPropagation();
+			event.stopImmediatePropagation();
 			this.dragging = true;
 			this.parent.setClass();
 			this.calcNewPosition(event);
