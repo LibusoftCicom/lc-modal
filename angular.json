@@ -121,7 +121,7 @@
 			"prefix": "lc",
 			"architect": {
 				"build": {
-					"builder": "@angular-devkit/build-ng-packagr:build",
+					"builder": "@angular-devkit/build-angular:ng-packagr",
 					"options": {
 						"tsConfig": "projects/lc-modal-lib/tsconfig.lib.json",
 						"project": "projects/lc-modal-lib/ng-package.json"
