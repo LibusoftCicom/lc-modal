@@ -58,19 +58,19 @@
 				},
 				"serve": {
 					"builder": "@angular-devkit/build-angular:dev-server",
-					"options": {
-						"browserTarget": "lc-modal-app:build"
+          "options": {
+            "buildTarget": "lc-modal-app:build"
 					},
 					"configurations": {
-						"production": {
-							"browserTarget": "lc-modal-app:build:production"
+            "production": {
+              "buildTarget": "lc-modal-app:build:production"
 						}
 					}
 				},
 				"extract-i18n": {
 					"builder": "@angular-devkit/build-angular:extract-i18n",
-					"options": {
-						"browserTarget": "lc-modal-app:build"
+          "options": {
+            "buildTarget": "lc-modal-app:build"
 					}
 				},
 				"test": {

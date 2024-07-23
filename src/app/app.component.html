@@ -133,14 +133,14 @@
             <ul class="list-group list-group-flush">
               <li class="list-group-item">
                 <p>1. Install lc-modal package from npm:</p>
-                <code>npm install @libusoftcicom/lc-modal</code>
+                <code>npm install &#64;libusoftcicom/lc-modal</code>
 			  </li>
 			  <li class="list-group-item">
 				  <p>2. Make a component</p>
 				<pre><code>
-import &#123; BaseModalComponent &#125; from '@libusoftcicom/lc-modal';
+import &#123; BaseModalComponent &#125; from '&#64;libusoftcicom/lc-modal';
 
-@Component(&#123;
+&#64;Component(&#123;
    template: `
    &lt;form (ngSubmit)="confirm(model)"&gt;&lt;/form&gt;
       &lt;button type="submit"&gt;Submit&lt;/button&gt;
@@ -148,7 +148,7 @@ import &#123; BaseModalComponent &#125; from '@libusoftcicom/lc-modal';
    `
 &#125;)
 export class ModalComponentExample extends BaseModalComponent &#123;
-   @Import()
+   &#64;Import()
    public data; // bind data from `params()` method
 &#125;
 </code></pre>
@@ -156,10 +156,10 @@ export class ModalComponentExample extends BaseModalComponent &#123;
               <li class="list-group-item">
                 <p>3. Register ModalModule in NgModule with components that are opened in modal:</p>
                 <pre><code>
-   import &#123; ModalModule &#125; from '@libusoftcicom/lc-modal';
+   import &#123; ModalModule &#125; from '&#64;libusoftcicom/lc-modal';
    import &#123; ModalComponentExample &#125; from '...'; // component used in modal
 
-    @NgModule(
+    &#64;NgModule(
       &#123;
         declarations: [..., ModalComponentExample],
         imports: [

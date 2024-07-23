@@ -27,7 +27,7 @@ import { BaseModalComponent } from '@libusoftcicom/lc-modal';
     <div class="col-sm-10">
       <div class="input-group">
         <div class="input-group-prepend">
-          <span class="input-group-text" id="inputGroupPrepend">@</span>
+          <span class="input-group-text" id="inputGroupPrepend">&#64;</span>
         </div>
         <input type="text" class="form-control" id="validationCustomUsername" placeholder="Username" aria-describedby="inputGroupPrepend" required  [(ngModel)]="model.username" name="username">
         <div class="invalid-feedback">
