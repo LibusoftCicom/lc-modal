@@ -8,11 +8,10 @@ import {
 	ElementRef
 } from '@angular/core';
 import {
-	async,
 	ComponentFixture,
 	TestBed,
 	fakeAsync,
-	tick
+	tick, waitForAsync
 } from '@angular/core/testing';
 
 import { ModalModule, IModalResult, Modal, ModalEventType } from './modal.module';
@@ -49,7 +48,7 @@ describe('ModalComponentHost', () => {
 
 	let SpyFunctions;
 
-	beforeEach(async(() => {
+	beforeEach(waitForAsync(() => {
 		TestBed.configureTestingModule({
 			providers: [],
 			imports: [ModalModule],

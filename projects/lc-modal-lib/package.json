@@ -1,6 +1,6 @@
 {
 	"name": "@libusoftcicom/lc-modal",
-	"version": "17.0.0",
+	"version": "18.0.0",
 	"description": "LC Modal - Angular modal component.",
 	"homepage": "https://github.com/LibusoftCicom/lc-modal",
 	"bugs": "https://github.com/LibusoftCicom/lc-modal/issues",
@@ -24,10 +24,11 @@
 		"angular 14",
 		"angular 15",
 		"angular 16",
-		"angular 17"
+		"angular 17",
+		"angular 18"
 	],
 	"peerDependencies": {
-		"@angular/common": "^17.0.0",
-		"@angular/core": "^17.0.0"
+		"@angular/common": "^18.0.0",
+		"@angular/core": "^18.0.0"
 	}
 }
