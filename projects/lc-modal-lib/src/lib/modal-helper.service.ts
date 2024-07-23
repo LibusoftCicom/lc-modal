@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { EventManager } from '@angular/platform-browser';
+import {Injectable, OnDestroy} from '@angular/core';
+import {fromEvent, Subscription} from 'rxjs';
 
 export interface IviewPort {
 	height: number;
@@ -7,13 +7,20 @@ export interface IviewPort {
 }
 
 @Injectable()
-export class ModalHelper {
+export class ModalHelper implements OnDestroy {
 	private _viewport: IviewPort = null;
+	private subscriptions: Subscription[] = [];
 
-	constructor(private eventManager: EventManager) {
-		eventManager.addGlobalEventListener('window', 'resize', () => {
+	constructor() {
+
+		this.subscriptions.push(fromEvent(window, 'resize').subscribe(() => {
 			this._viewport = null;
-		});
+		}));
+	}
+
+	public ngOnDestroy(): void {
+		this.subscriptions.forEach(subscription => subscription.unsubscribe());
+		this.subscriptions.length = 0;
 	}
 
 	public get viewport(): IviewPort {
@@ -31,7 +38,11 @@ export class ModalHelper {
 	}
 
 	public onWindowResize(fn: Function): Function {
-		return this.eventManager.addGlobalEventListener('window', 'resize', fn);
+		const subscription = fromEvent(window, 'resize').subscribe(() => fn());
+		this.subscriptions.push(subscription);
+		// This keeps the method signature the same as in previous versions,
+		// while nothing will happen in ngOnDestroy if the user has already unsubscribed.
+		return () => subscription.unsubscribe();
 	}
 
 	public pauseEvent(e: PointerEvent): void {
