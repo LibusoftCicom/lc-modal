@@ -9,7 +9,12 @@ export class Draggable implements OnDestroy {
 
 	private hostElementRef: ElementRef = null;
 
-	constructor(private modalHelper: ModalHelper) { }
+	constructor(
+		private modalHelper: ModalHelper,
+		elementRef: ElementRef
+	) {
+		this.hostElementRef = elementRef;
+	}
 
 	public ngOnDestroy(): void {
 		this.parent =

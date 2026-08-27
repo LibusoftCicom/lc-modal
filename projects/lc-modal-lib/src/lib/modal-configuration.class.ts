@@ -243,6 +243,11 @@ export class ModalConfiguration {
 	}
 
 	public setMaximized(isFullScreen: boolean = true): void {
+		this.fullscreen = isFullScreen;
+
+		isFullScreen ? this.addClass(ModalClassNames.FULLSCREEN) : this.removeClass(ModalClassNames.FULLSCREEN);
+		this.valueChanged.next({ type: ModalConfigurationEventType.FULLSCREEN_CHANGE, value: isFullScreen });
+
 		if (isFullScreen) {
 			this.setDraggable(false, false);
 			this.setResizable(false, false);
@@ -263,8 +268,6 @@ export class ModalConfiguration {
 			this.restoreMaxWidth();
 		}
 
-		this.fullscreen = isFullScreen;
-
 		/**
 		 * if draggable is disabled
 		 * position modal to center
@@ -272,9 +275,6 @@ export class ModalConfiguration {
 		if (!this.isDraggable()) {
 			this.setPositionToScreenCenter(true);
 		}
-
-		isFullScreen ? this.addClass(ModalClassNames.FULLSCREEN) : this.removeClass(ModalClassNames.FULLSCREEN);
-		this.valueChanged.next({ type: ModalConfigurationEventType.FULLSCREEN_CHANGE, value: isFullScreen });
 	}
 
 	public toggleMaximize(): void {

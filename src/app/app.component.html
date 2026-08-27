@@ -51,6 +51,21 @@
           <li class="list-group-item">
             <button type="button" (click)="withCollapseModal()" class="btn btn-primary">With collapse enabled</button>
           </li>
+          <li class="list-group-item">
+            <button type="button" (click)="customStyledModal()" class="btn btn-primary">Custom styled modal</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="coloredModal()" class="btn btn-primary">Colored modal (custom CSS class)</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="customHeaderModal()" class="btn btn-primary">Custom header (single modal via <code>.header()</code>)</button>
+          </li>
+          <li class="list-group-item">
+            <button type="button" (click)="toggleGlobalTheme()" class="btn btn-secondary">{{darkTheme ? 'Disable' : 'Enable'}} global dark theme</button>
+            <br>
+            <br>
+            <button type="button" (click)="example()" class="btn btn-primary">Open modal (global style)</button>
+          </li>
         </ul>
 
       </div>
@@ -96,6 +111,8 @@
         </div>
       </div>
     </div>
+
+    <hr>
 
     <div class="row card border-light">
       <div class="card border-light">
@@ -199,6 +216,112 @@ export class ModalComponentExample extends BaseModalComponent &#123;
         </div>
       </div>
     </div>
+
+    <hr>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Custom modal styles</h5>
+        <div class="card-body">
+          <p>Define the CSS custom properties for that modal:</p>
+
+          <p>Available variables:</p>
+          <ul class="list-unstyled">
+            <li><code>--lc-modal-background</code> - modal background</li>
+            <li><code>--lc-modal-content-background</code> - content background</li>
+            <li><code>--lc-modal-content-padding</code> - content padding</li>
+            <li><code>--lc-modal-width</code>, <code>--lc-modal-min-width</code>, <code>--lc-modal-min-height</code> - modal dimensions</li>
+            <li><code>--lc-modal-top</code> - default modal top position</li>
+            <li><code>--lc-modal-overlay-background</code> - overlay color</li>
+            <li><code>--lc-modal-shadow</code> - modal shadow</li>
+            <li><code>--lc-modal-border</code> - modal border</li>
+            <li><code>--lc-modal-pseudo-background</code>, <code>--lc-modal-pseudo-border</code> - resize preview styles</li>
+            <li><code>--lc-modal-header-background</code>, <code>--lc-modal-header-color</code> - header colors</li>
+            <li><code>--lc-modal-header-text-color</code> - default header text color</li>
+            <li><code>--lc-modal-header-font-size</code>, <code>--lc-modal-header-font-weight</code> - header typography</li>
+            <li><code>--lc-modal-header-padding</code>, <code>--lc-modal-header-button-size</code> - header spacing and button size</li>
+            <li><code>--lc-modal-header-button-color</code>, <code>--lc-modal-header-button-opacity</code>, <code>--lc-modal-header-button-hover-opacity</code> - button appearance</li>
+            <li><code>--lc-modal-header-button-font-size</code>, <code>--lc-modal-header-button-font-weight</code>, <code>--lc-modal-header-maximize-button-font-size</code> - button typography</li>
+            <li><code>--lc-modal-resize-color</code>, <code>--lc-modal-resize-inner-color</code> - resize handle colors</li>
+          </ul>
+
+          <p>The same principle can be used to define your own custom CSS class, e.g. <code>colored-modal</code>:</p>
+          <pre><code>this.modal
+  .component(ModalComponentExample)
+  .addClass('colored-modal')
+  .open();</code></pre>
+          <pre><code>modal-component.colored-modal &#123;
+  --lc-modal-header-background: #be185d;
+  --lc-modal-header-color: #fff;
+  --lc-modal-overlay-background: rgba(190, 24, 93, .35);
+&#125;</code></pre>
+
+          <p>To change the look of <strong>every</strong> modal at once (a global change), override the CSS custom properties on the base <code>modal-component</code> selector instead of a modal-specific class, e.g. by toggling a class on <code>&lt;body&gt;</code>:</p>
+          <pre><code>modal-component &#123;
+  --lc-modal-header-background: #11111b;
+  --lc-modal-header-color: #cdd6f4;
+  --lc-modal-background: #1e1e2e;
+&#125;</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row card border-light">
+      <div class="card border-light">
+        <h5 class="card-header">Custom header component</h5>
+        <div class="card-body">
+          <p>The default modal header can be replaced with your own component, implementing <code>IModalHeaderComponent</code>:</p>
+          <pre><code>&#64;Component(&#123;
+  selector: 'custom-modal-header',
+  standalone: true,
+  template: `
+    &lt;div class="custom-modal-header"&gt;
+      &lt;span&gt;&#123;&#8203;&#123; title() &#125;&#8203;&#125;&lt;/span&gt;
+      &lt;button (click)="close()"&gt;&amp;times;&lt;/button&gt;
+    &lt;/div&gt;
+  `
+&#125;)
+export class CustomHeaderComponent implements IModalHeaderComponent &#123;
+  title = input.required&lt;string | null&gt;();
+  configuration = input.required&lt;ModalConfiguration&gt;();
+
+  private closeFn: () =&gt; void = () =&gt; &#123;&#125;;
+
+  setCloseFn(fn: () =&gt; void): void &#123;
+    this.closeFn = fn;
+  &#125;
+&#125;</code></pre>
+
+          <p>1. Use it for a <strong>single modal</strong> by calling <code>.header()</code> on the modal instance:</p>
+          <pre><code>this.modal
+  .title('Custom header modal')
+  .component(ModalComponentExample)
+  .header(CustomHeaderComponent)
+  .open();</code></pre>
+
+          <p>2. Or replace the <strong>default header for every modal</strong> in the app by providing it through the <code>MODAL_HEADER</code> token, e.g. via <code>ModalModule.forRoot()</code> in <code>AppModule</code>:</p>
+          <pre><code>ModalModule.forRoot(&#123;
+  header: GlobalModalHeaderComponent
+&#125;)</code></pre>
+          <p>which is equivalent to providing it directly:</p>
+          <pre><code>providers: [
+  withModalHeader(GlobalModalHeaderComponent)
+]</code></pre>
+
+          <p>3. In a <strong>standalone</strong> app (no <code>AppModule</code>), <code>ModalModule</code> still needs to be imported once for its own providers (<code>Modal</code>, <code>ModalHelper</code>, <code>ModalConfig</code>), but <code>withModalHeader()</code> is a plain <code>Provider</code> and can be added on its own, next to it, in <code>bootstrapApplication()</code>:</p>
+          <pre><code>bootstrapApplication(AppComponent, &#123;
+  providers: [
+    withModalHeader(GlobalModalHeaderComponent)
+  ]
+&#125;);</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
     <div class="row card border-light">
       <div class="card-header">
         <b>
@@ -235,6 +358,7 @@ this.modal
   .draggable(true)
   .showMaximize(true)
   .onlyLastModalActive(false)
+  .header(CustomHeaderComponent)
   .open();
         </code>
               </pre>

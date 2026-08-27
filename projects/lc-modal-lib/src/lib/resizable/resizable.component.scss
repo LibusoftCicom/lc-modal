@@ -38,7 +38,7 @@
   position: absolute;
   display: block;
   content: "\0A0";
-  border-bottom: 10px solid #adacad;
+  border-bottom: 10px solid var(--lc-modal-resize-color, #adacad);
   border-left: 10px solid transparent;
   border-right: 0;
   border-top: 0;
@@ -46,7 +46,7 @@
 
 .resizable-corner span:after,
 .resizable-corner span:before {
-  border-bottom-color: #fff;
+  border-bottom-color: var(--lc-modal-resize-inner-color, #fff);
 }
 
 :host-context(.pdf-reader) .resizable-corner:after,

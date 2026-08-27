@@ -1,4 +1,4 @@
-:host {
+:host {	
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */
 	-khtml-user-select: none; /* Konqueror HTML */
@@ -24,7 +24,7 @@
 }
 
 :host(.overlay-active) {
-	background: rgba(0, 0, 0, 0.4);
+	background: var(--lc-modal-overlay-background);
 }
 
 :host(.overlay-active) {
@@ -48,26 +48,28 @@
 	pointer-events: all;
 	position: fixed;
 	right: 0;
-	top: 40%;
-	width: 580px;
+	width: var(--lc-modal-width);
+	top: var(--lc-modal-top);
 }
 
 .modal-pseudo {
-	background: rgba(255, 255, 255, 0.3);
-	border: 3px dashed #d9dbdc;
+	background: var(--lc-modal-pseudo-background);
+	border: var(--lc-modal-pseudo-border);
 	margin: 0;
 	z-index: 50000;
 }
 
 .modal-box {
-	background: #fff;
+	background: var(--lc-modal-background);
+	border-radius: var(--lc-modal-border-radius, 0px);
 	-webkit-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
 	-moz-box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
-	box-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+	box-shadow: var(--lc-modal-shadow);
 	display: flex;
 	flex-direction: column;
-	min-height: 150px;
-	min-width: 580px;
+	overflow: hidden;
+	min-height: var(--lc-modal-min-height);
+	min-width: var(--lc-modal-min-width);
 	z-index: 10001;
 
 	> * {
@@ -85,106 +87,6 @@
 	top: 0 !important;
 }
 
-// :host(.collapsed) .modal-box {
-// 	height: 28px !important;
-// 	min-height: 28px !important;
-// }
-
-$header-height: 28px;
-
-.modal-box .modal-header {
-	border-radius: 0px;
-	color: #000;
-	display: flex;
-	flex-wrap: nowrap;
-	font-size: 14px;
-	height: $header-height;
-	justify-content: space-between;
-	line-height: $header-height;
-	padding: 0 5px 0 10px;
-	touch-action: none;
-	width: 100%;
-	z-index: 10;
-
-	* {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
-	}
-
-	&.colored {
-		background: #5e666f;
-		color: #fff;
-
-		:host-context(.dark) & {
-			background: #2b3135;
-		}
-
-		:host-context(.light) & {
-			background: #374c6b;
-		}
-
-		:host-context(.purple) & {
-			background: #4527a0;
-		}
-
-		:host-context(.indigo) & {
-			background: #283593;
-		}
-
-		:host-context(.teal) & {
-			background: #00695c;
-		}
-
-		:host-context(.gray) & {
-			background: #424242;
-		}
-	}
-
-	.modal-title {
-		flex: 1 1 auto;
-		line-height: 1.6rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.modal-controls {
-		font-size: 0;
-		line-height: 0;
-		text-align: right;
-	}
-
-	.modal-header-btn {
-		cursor: pointer;
-		display: inline-block;
-		font-size: 20px;
-		font-weight: 700;
-		height: 26px;
-		line-height: 22px;
-		opacity: .8;
-		text-align: center;
-		transition: opacity .3s ease-in-out;
-		vertical-align: top;
-		width: 26px;
-		z-index: 100;
-
-		svg {
-			height: 1em;
-			vertical-align: middle;
-			width: auto;
-		}
-
-		&.maximize-btn {
-			font-size: 18px;
-		}
-
-		&:hover {
-			opacity: 1;
-		}
-	}
-}
-
 :host(.collapsed) .modal-header {
 	border: 0;
 }
@@ -194,13 +96,13 @@ $header-height: 28px;
 	display: flex;
 	flex-direction: column;
 	flex-grow: 1;
-	height: calc(100% - #{$header-height});
+	height: 100%;
 	overflow: hidden;
 	padding: 0;
 	position: relative;
 
 	.modal-content {
-		background: white;
+		background: var(--lc-modal-content-background);
 		border: 0;
 		display: flex;
 		flex-direction: column;
@@ -208,7 +110,7 @@ $header-height: 28px;
 		height: 100%;
 		overflow-x: hidden;
 		overflow-y: auto;
-		padding: 10px;
+		padding: var(--lc-modal-content-padding);
 	}
 
 	::ng-deep .modal-content > * {
@@ -216,44 +118,6 @@ $header-height: 28px;
 	}
 }
 
-:host(.message-box) {
-	z-index: 400000 !important;
-
-	.modal-pseudo {
-		min-width: 400px;
-	}
-
-	.modal-box {
-		background: #fff;
-		bottom: auto;
-		display: block;
-		height: auto;
-		left: 50%;
-		margin: -150px 0 0 -200px;
-		min-height: 160px;
-		min-width: 400px;
-		min-width: initial;
-		overflow: hidden;
-		right: auto;
-		top: 50%;
-		width: 400px;
-		z-index: 40000;
-	}
-
-	.modal-header,
-	.modal-body {
-		text-align: center;
-	}
-
-	.modal-body,
-	.modal-content {
-		padding: 0 !important;
-	}
-
-	.close-btn {
-		color: #858f98;
-	}
-}
 
 @media handheld, screen and (max-width: 760px) {
 	.modal-header[draggable-handle] {
@@ -273,28 +137,7 @@ $header-height: 28px;
 			top: 0 !important;
 		}
 	}
-
-	:host(.message-box) .modal-box {
-		-moz-transform: translate(-50%, -50%);
-		-ms-transform: translate(-50%, -50%);
-		-o-transform: translate(-50%, -50%);
-		-webkit-transform: translate(-50%, -50%);
-		bottom: auto !important;
-		left: 50% !important;
-		margin: auto;
-		min-height: auto !important;
-		min-width: auto !important;
-		right: auto !important;
-		top: 50% !important;
-		transform: translate(-50%, -50%);
-	}
 }
-/*
-@media handheld, screen and ( orientation:portrait ) {
-    .modal-box {
-        bottom: auto;
-    }
-} */
 
 
 

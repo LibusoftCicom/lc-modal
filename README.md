@@ -74,6 +74,30 @@ let modalResult = await this.modal
       .open();
 ```
 
+### Customizing styles
+
+Modal styles can be customized with CSS custom properties. Set them globally or
+on a class applied to the modal host:
+
+```css
+modal-component.my-modal {
+  --lc-modal-header-background: #17324d;
+  --lc-modal-header-color: #fff;
+  --lc-modal-background: #f7f9fb;
+  --lc-modal-content-background: #fff;
+  --lc-modal-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  --lc-modal-width: 720px;
+  --lc-modal-header-height: 36px;
+  --lc-modal-header-button-size: 32px;
+}
+```
+
+Available properties include `--lc-modal-overlay-background`,
+`--lc-modal-border`, `--lc-modal-min-width`, `--lc-modal-min-height`,
+`--lc-modal-top`, `--lc-modal-content-padding`, message-box properties, and
+resize handle colors. Existing styles remain the defaults when a property is
+not overridden.
+
 ## Developing
 
 ### Built With:

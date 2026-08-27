@@ -3,14 +3,6 @@ import { ModalConfiguration } from './modal-configuration.class';
 
 export interface IHostModalComponent {
 
-	title: string;
-	closeButtonEnabled: boolean;
-	maximizeButtonEnabled: boolean;
-	collapseButtonEnabled: boolean;
-
-	maximized: boolean;
-	collapsed: boolean;
-
 	closeFn: () => void;
 
 	isActive: boolean;
@@ -21,14 +13,12 @@ export interface IHostModalComponent {
 	focusOnChange: Element; // getter | setter
 	readonly hostElement: HTMLElement; // getter
 
-	setTitle(title: string): this;
-
-	toggleMaximize(): void;
-
 	setCloseFn(fn: () => void): this;
 
 	setConfiguration(modalConfiguration: ModalConfiguration): void;
 
+	setHeaderComponent<T>(componentFactory: Type<T>): ComponentRef<T>;
+	setFooterComponent<T>(componentFactory: Type<T>): ComponentRef<T> | null;
 	addComponent<T>(componentFactory: Type<T>): ComponentRef<T>;
 
 	getHeight(): number;

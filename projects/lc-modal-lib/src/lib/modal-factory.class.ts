@@ -1,4 +1,4 @@
-import { ViewContainerRef, ComponentRef, Injector } from '@angular/core';
+import { ViewContainerRef, ComponentRef, Injector, Component, Type } from '@angular/core';
 import { ModalComponent } from './modal.component';
 import {
 	IModal,
@@ -25,6 +25,9 @@ import { ModalComponentInputBinder } from './modal-input-binder.service';
 import { ACTIVE_MODAL } from './modal-active-model.class';
 import { MODAL_RESOLVE } from './modal-resolve.class';
 import { ModalEvent } from './modal-event.class';
+import { IHostModalComponent } from './modal-component.interface';
+import { IModalHeaderComponent } from './header/modal-header.component.interface';
+import { MODAL_HEADER } from './header/header-provider.class';
 
 
 function isPromise(obj: any): obj is Promise<any> {
@@ -49,6 +52,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private componentClassRef: any = null;
 
+	private headerComponentClassRef: any = null;
+
 	private componentClassLoader: () => Promise<any> = null;
 
 	private hostComponentWrapperRef: ComponentRef<ModalComponent> = null;
@@ -63,7 +68,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private closeOnErrorEnabled = false;
 
-	private _focusElement: HTMLElement;
+	private _focusElement: HTMLElement | null = null
 
 	private preserveOnCloseFocus: boolean = true;
 
@@ -85,13 +90,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private readonly configuration: ModalConfiguration = new ModalConfiguration();
 
-	private readonly inputBinder: ModalComponentInputBinder = null;
+	private readonly inputBinder: ModalComponentInputBinder | null;
 
-	private readonly modalResolve: IModalResolve = null;
+	private readonly modalResolve: IModalResolve | null;
 
-	private _afterInit: () => void = null;
+	private _afterInit: (() => void) | null = null;
 
-	private _afterViewInit: () => void = null;
+	private _afterViewInit: (() => void) | null = null;
+
+	private readonly MODAL_HEADER: Type<IModalHeaderComponent> | null = null;
 
 	constructor(
 		private viewContainerRef: ViewContainerRef,
@@ -101,6 +108,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	) {
 		this.inputBinder = this.injector.get(INPUT_BINDER, null);
 		this.modalResolve = this.injector.get<IModalResolve>(MODAL_RESOLVE, null);
+		this.MODAL_HEADER = this.injector.get<Type<IModalHeaderComponent>>(MODAL_HEADER);
 	}
 
 	/**
@@ -150,7 +158,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	/**
 	 * get reference to component in modal
 	 */
-	public get componentRef(): IModalComponent<any> {
+	public get componentRef(): IModalComponent<any> | null {
 		return !!this.componentInstanceRef && !!this.componentInstanceRef.instance
 			? this.componentInstanceRef.instance
 			: null;
@@ -404,7 +412,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public resizable(enabled: boolean = true): this {
 		if (this.configuration.isMaximized()) {
-			return;
+			return this;
 		}
 		this.configuration.setResizable(enabled, true);
 		return this;
@@ -419,7 +427,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public draggable(enabled: boolean = true): this {
 		if (this.configuration.isMaximized()) {
-			return;
+			return this;
 		}
 		this.configuration.setDraggable(enabled, true);
 		return this;
@@ -430,6 +438,14 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public component<T>(component: T): this {
 		this.componentClassRef = component;
+		return this;
+	}
+
+	/**
+	 * override default modal header with a custom Component
+	 */
+	public header<T>(component: T): this {
+		this.headerComponentClassRef = component;
 		return this;
 	}
 
@@ -512,9 +528,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public title(title: string): this {
 		this.titleValue = title;
-		if (this.hostComponentRef) {
-			this.hostComponentRef.setTitle(title);
-		}
 		return this;
 	}
 
@@ -619,7 +632,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		hostComponentInstance.setConfiguration(this.configuration);
 		// (<any>hostComponentInstance).factory = this;
 		// forward settings to Modal box instance
-		hostComponentInstance.setTitle(this.titleValue).setCloseFn(() => this.cancel());
+		hostComponentInstance.setCloseFn(() => this.cancel());
 		hostComponentInstance.setActive = () => ACTIVE_MODAL.set(this);
 
 		if (!this._focusElement) {
@@ -632,6 +645,18 @@ export class ModalFactory implements IModal<ModalFactory> {
 			// we need to tell previous modal to use this element for focus after we close modal
 			this.previous.hostComponentRef.focusOnChange = this._focusElement;
 		}
+
+		// Render the host first so required viewChild queries, such as #header, are available before createComponent().
+		changeDetectorRef.detectChanges();
+
+		// prepare header component and inputs
+		const headerClassRef = this.headerComponentClassRef || this.MODAL_HEADER;
+		const header = hostComponentInstance.setHeaderComponent(headerClassRef);
+		header.setInput('title', this.titleValue);
+		header.setInput('configuration', this.configuration);
+		header.changeDetectorRef.detectChanges();
+		(header.instance as IModalHeaderComponent).setCloseFn(() => this.cancel());
+
 
 		// add child component to our wrapper component instance
 		this.prepareChildComponent(hostComponentInstance);
@@ -737,13 +762,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		Object.defineProperty(childComponent, 'cancel', {
 			value: () => this.cancel(),
-			enumerable: false,
-			writable: false,
-			configurable: false
-		});
-
-		Object.defineProperty(childComponent, 'setTitle', {
-			value: (title: string) => parentComponent.setTitle((this.titleValue = title)),
 			enumerable: false,
 			writable: false,
 			configurable: false

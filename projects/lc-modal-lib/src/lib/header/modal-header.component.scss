@@ -1,0 +1,72 @@
+:host {
+	border-radius: 0px;
+	color: var(--lc-modal-header-text-color);
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	font-size: var(--lc-modal-header-font-size);
+	font-weight: var(--lc-modal-header-font-weight);
+	height: var(--lc-modal-header-height);
+	justify-content: space-between;
+	line-height: 2em;
+	padding: var(--lc-modal-header-padding);
+	touch-action: none;
+	width: 100%;
+	z-index: 10;
+
+	* {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	&.colored {
+		background: var(--lc-modal-header-background);
+		color: var(--lc-modal-header-color);
+	}
+
+	.modal-title {
+		flex: 1 1 auto;
+		line-height: 1em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.modal-controls {
+		font-size: 0;
+		line-height: 0;
+		text-align: right;
+	}
+
+	.modal-header-btn {
+		cursor: pointer;
+		display: inline-block;
+		font-size: var(--lc-modal-header-button-font-size);
+		font-weight: var(--lc-modal-header-button-font-weight);
+		height: var(--lc-modal-header-button-size);
+		line-height: 1.1em;
+		opacity: var(--lc-modal-header-button-opacity);
+		text-align: center;
+		transition: opacity .3s ease-in-out;
+		vertical-align: top;
+		width: var(--lc-modal-header-button-size);
+		color: var(--lc-modal-header-button-color);
+		z-index: 100;
+
+		svg {
+			height: 1em;
+			vertical-align: middle;
+			width: auto;
+		}
+
+		&.maximize-btn {
+			font-size: 18px;
+			line-height: 1.222em;
+		}
+
+		&:hover {
+			opacity: var(--lc-modal-header-button-hover-opacity);
+		}
+	}
+}

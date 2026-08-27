@@ -11,7 +11,11 @@ import {
 	OnDestroy,
 	ChangeDetectorRef,
 	AfterContentInit,
-	Type
+	Type,
+	WritableSignal,
+	signal,
+	viewChild,
+	Signal
 } from '@angular/core';
 import {fromEvent, Subscription} from 'rxjs';
 import { ModalConfig, MODAL_DEFAULT_SELECTOR } from './modal-config.class';
@@ -30,15 +34,21 @@ import { Draggable } from './draggable/draggable.directive';
 @Component({
 	selector: `modal-component`,
 	templateUrl: `./modal.component.html`,
-	styleUrls: ['./modal.component.scss'],
+	styleUrls: [
+		'./modal-defaults.scss',
+		'./modal.component.scss'
+	],
 	host: {
 		'tabindex': '-1'
 	}
 })
 export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, OnDestroy, IHostModalComponent {
 
-	@ViewChild('content', { static: true, read: ViewContainerRef })
-	private contentRef: ViewContainerRef;
+	private contentRef: Signal<ViewContainerRef> = viewChild.required('content', { read: ViewContainerRef });
+	
+	private headerRef: Signal<ViewContainerRef> = viewChild.required('header', { read: ViewContainerRef });
+
+	private footerRef: Signal<ViewContainerRef | undefined> = viewChild('footer', { read: ViewContainerRef });
 
 	@ViewChild('modalBox', { static: true })
 	private modalBox: ElementRef;
@@ -55,18 +65,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	private eventDestroyHooks: Function[] = [];
 	private eventDestroySubscriptions: Subscription[] = [];
 
-	public title: string;
-
-	public closeButtonEnabled = false;
-
-	public maximizeButtonEnabled = false;
-
-	public collapseButtonEnabled = false;
-
-	public maximized = false;
-
-	public collapsed = false;
-
 	public closeFn: () => void;
 
 	public isActive = false;
@@ -75,9 +73,9 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 
 	public isResizable = false;
 
-	public focusOnChangeElement: Element = null;
+	public focusOnChangeElement: Element;
 
-	private modalConfiguration: ModalConfiguration = null;
+	private modalConfiguration: ModalConfiguration;
 
 	constructor(
 		vcRef: ViewContainerRef,
@@ -136,34 +134,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		this.cdr.detectChanges();
 	}
 
-	public get headerVisible(): boolean {
-		return !!this.title;
-	}
-
-	/**
-	 * Set modal title
-	 */
-	public setTitle(title: string): this {
-		this.title = title;
-		return this;
-	}
-
-	/**
-	 * on double click toggle modal size
-	 */
-	public toggleMaximize() {
-		if (!this.maximizeButtonEnabled) {
-			return;
-		}
-		this.modalConfiguration.toggleMaximize();
-	}
-
-	public toggleCollapse() {
-		if (!this.collapseButtonEnabled) {
-			return;
-		}
-		this.modalConfiguration.toggleCollapse();
-	}
 
 	/**
 	 * set method used on CLOSE button
@@ -173,25 +143,20 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		return this;
 	}
 
-	public addComponent<T>(componentFactory: Type<T>): ComponentRef<T> {
-		return this.contentRef.createComponent(componentFactory);
+	public setHeaderComponent<T>(component: Type<T>): ComponentRef<T> {
+		return this.headerRef().createComponent(component);
 	}
 
-	public getControlsWidth(): null | string {
-		const BUTTON_WIDTH = 28;
-		let width = 0;
+	public setFooterComponent<T>(component: Type<T>): ComponentRef<T> | null {
+		return this.footerRef()?.createComponent(component) ?? null;
+	}
 
-		if (this.closeButtonEnabled) {
-			width += BUTTON_WIDTH;
-		}
-		if (this.maximizeButtonEnabled) {
-			width += BUTTON_WIDTH;
-		}
-		if (this.collapseButtonEnabled) {
-			width += BUTTON_WIDTH;
-		}
+	public addComponent<T>(componentFactory: Type<T>): ComponentRef<T> {
+		return this.contentRef()?.createComponent(componentFactory);
+	}
 
-		return width === 0 ? null : width + ModalDimensionUnits.PIXEL;
+	protected isFooterVisible(): boolean {
+		return false;
 	}
 
 	/**
@@ -262,10 +227,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 			this.setMaxWidth(this.modalConfiguration.getMaxWidth()?.value, this.modalConfiguration.getMaxWidth()?.units);
 		}
 
-		this.maximizeButtonEnabled = this.modalConfiguration.isMaximizeButtonVisible();
 		this.isResizable = this.modalConfiguration.isResizable();
-		this.closeButtonEnabled = this.modalConfiguration.isCloseButtonVisible();
-		this.collapseButtonEnabled = this.modalConfiguration.isCollapseButtonVisible();
+
 		this.closeByDocumentEnabled = this.modalConfiguration.isClickOnDocumentCloseEnabled();
 
 		// add ionitialy defined class names
@@ -338,7 +301,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.COLLAPSE_CHANGE))
 				.subscribe(({ value }) => {
-					this.collapsed = value;
 					this.detectChanges();
 				})
 		);
@@ -375,8 +337,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 				.valueChanges
 				.pipe(filter(({ type }) => type === ModalConfigurationEventType.FULLSCREEN_CHANGE))
 				.subscribe(({ value }) => {
-					this.maximized = value;
-
 					if (this.isActive) {
 						this.notifyResize();
 					}
@@ -589,13 +549,6 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 
 	private changeStackOrder(index: number) {
 		this.renderer.setStyle(this.hostElementRef.nativeElement, 'z-index', index);
-	}
-
-	public onMouseClose(event: PointerEvent): void {
-		event.stopPropagation();
-		if (this.closeFn) {
-			this.closeFn();
-		}
 	}
 
 	@HostListener('click', ['$event'])

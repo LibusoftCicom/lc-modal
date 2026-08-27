@@ -1,6 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import {
 	Directive,
+	Input,
+	booleanAttribute,
 	Optional,
 	Host,
 	OnDestroy,
@@ -25,6 +27,9 @@ export enum MouseEventButton {
 
 @Directive({ selector: '[draggable-handle]' })
 export class DraggableHandle implements AfterViewInit, OnDestroy {
+	@Input({ alias: 'draggable-handle', transform: booleanAttribute })
+	public enabled = true;
+
 	private modalComponentHost: ElementRef;
 
 	private pseudoEl: HTMLElement;
@@ -56,10 +61,11 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 		private zone: NgZone,
 		@Inject(DOCUMENT) private readonly document
 	) {
-		this.modalComponentHost = parent.hostElement;
 	}
 
 	public ngAfterViewInit(): void {
+		this.modalComponentHost = this.parent.hostElement;
+
 		// don't run it in zone because it will trigger detect changes in component
 		this.zone.runOutsideAngular(() => {
 			this.subscriptions.push(
@@ -86,6 +92,10 @@ export class DraggableHandle implements AfterViewInit, OnDestroy {
 	}
 
 	private onMouseDown(event: PointerEvent): void {
+		if (!this.enabled) {
+			return;
+		}
+
 		if (this.timeout) {
 			clearTimeout(this.timeout);
 		}

@@ -1,0 +1,33 @@
+modal-component {
+	--lc-modal-background: #fff;
+	--lc-modal-border-radius: 0px;
+	--lc-modal-min-height: 150px;
+	--lc-modal-min-width: 580px;
+	--lc-modal-overlay-background: rgba(0, 0, 0, 0.4);
+	--lc-modal-shadow: 0px 2px 8px rgba(50, 50, 50, 0.4);
+	--lc-modal-top: 40%;
+	--lc-modal-width: 580px;
+
+	--lc-modal-content-background: #fff;
+	--lc-modal-content-padding: 10px;
+
+	--lc-modal-pseudo-background: rgba(255, 255, 255, 0.3);
+	--lc-modal-pseudo-border: 3px dashed #d9dbdc;
+
+	--lc-modal-resize-color: #adacad;
+	--lc-modal-resize-inner-color: #fff;
+
+	--lc-modal-header-background: #5e666f;
+	--lc-modal-header-button-color: currentColor;
+	--lc-modal-header-button-hover-opacity: 1;
+	--lc-modal-header-button-opacity: .8;
+	--lc-modal-header-button-size: 26px;
+	--lc-modal-header-color: #fff;
+	--lc-modal-header-font-size: 14px;
+	--lc-modal-header-font-weight: 400;
+	--lc-modal-header-height: 28px;
+	--lc-modal-header-padding: 0 5px 0 10px;
+	--lc-modal-header-text-color: #000;
+	--lc-modal-header-button-font-size: 20px;
+	--lc-modal-header-button-font-weight: 700;
+}

@@ -17,7 +17,7 @@ import { ModalResolve } from './modal-resolve.service';
 		FormsModule,
 		ModalModule.forRoot({
 			bindToComponentInputs: true,
-			resolve: ModalResolve
+			resolve: ModalResolve,
 		}),
 		RouterModule.forRoot([
 			{
