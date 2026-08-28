@@ -14,6 +14,8 @@ export class AppComponent {
 	public status: Object;
 	public darkTheme = false;
 
+	protected readonly year = new Date().getFullYear();
+
 	constructor(private modal: Modal) {}
 
 	public async example() {
