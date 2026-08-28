@@ -76,8 +76,16 @@ let modalResult = await this.modal
 
 ### Customizing styles
 
-Modal styles can be customized with CSS custom properties. Set them globally or
-on a class applied to the modal host:
+Modal styles can be customized with CSS custom properties.
+
+To style a **single modal**, add a custom CSS class with `.addClass()` and define the properties on that class:
+
+```typescript
+this.modal
+  .component(ModalComponentExample)
+  .addClass('my-modal')
+  .open();
+```
 
 ```css
 modal-component.my-modal {
@@ -92,11 +100,54 @@ modal-component.my-modal {
 }
 ```
 
+To change the look of **every** modal at once, override the same properties on the base `modal-component` selector instead of a modal-specific class:
+
+```css
+modal-component {
+  --lc-modal-header-background: #17324d;
+  --lc-modal-header-color: #fff;
+}
+```
+
 Available properties include `--lc-modal-overlay-background`,
 `--lc-modal-border`, `--lc-modal-min-width`, `--lc-modal-min-height`,
 `--lc-modal-top`, `--lc-modal-content-padding`, message-box properties, and
 resize handle colors. Existing styles remain the defaults when a property is
 not overridden.
+
+### Customizing the header
+
+The default modal header can be replaced with your own component that implements `IModalHeaderComponent`.
+
+To override the header for a **single modal**, call `.header()` on the modal instance:
+
+```typescript
+this.modal
+  .component(ModalComponentExample)
+  .header(CustomHeaderComponent)
+  .open();
+```
+
+To replace the **default header for every modal**, provide it through the `MODAL_HEADER` token.
+
+With `NgModule`:
+
+```typescript
+ModalModule.forRoot({
+  header: GlobalModalHeaderComponent
+})
+```
+
+With a standalone app (`bootstrapApplication`), `ModalModule` is still imported once for its own providers (`Modal`, `ModalHelper`, `ModalConfig`), while `withModalHeader()` is a plain `Provider` that can be added on its own:
+
+```typescript
+bootstrapApplication(AppComponent, {
+  providers: [
+    importProvidersFrom(ModalModule),
+    withModalHeader(GlobalModalHeaderComponent)
+  ]
+});
+```
 
 ## Developing
 
