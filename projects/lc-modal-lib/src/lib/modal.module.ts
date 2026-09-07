@@ -53,7 +53,8 @@ export interface IModalModuleConfig {
             useValue: ModalConfig
         },
         Modal,
-        ModalHelper
+        ModalHelper,
+				withModalHeader()
     ]
 })
 export class ModalModule {
