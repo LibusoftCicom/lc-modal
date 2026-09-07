@@ -58,6 +58,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	private hostComponentWrapperRef: ComponentRef<ModalComponent> = null;
 
+	private headerComponentRef: ComponentRef<IModalHeaderComponent> | null = null;
+
 	private modalStatusChange: Subject<ModalEvent<any, any>> = new Subject();
 
 	private viewReadyChange: Subject<any> = new Subject();
@@ -481,6 +483,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		if (this.hostComponentWrapperRef) {
 			this.hostComponentWrapperRef.destroy();
 		}
+		this.headerComponentRef = null;
 		this._focusElement = null;
 	}
 
@@ -528,6 +531,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 	 */
 	public title(title: string): this {
 		this.titleValue = title;
+		this.headerComponentRef?.setInput('title', title);
 		return this;
 	}
 
@@ -651,7 +655,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 		// prepare header component and inputs
 		const headerClassRef = this.headerComponentClassRef || this.MODAL_HEADER;
-		const header = hostComponentInstance.setHeaderComponent(headerClassRef);
+		const header = hostComponentInstance.setHeaderComponent<IModalHeaderComponent>(headerClassRef);
+		this.headerComponentRef = header;
 		header.setInput('title', this.titleValue);
 		header.setInput('configuration', this.configuration);
 		header.changeDetectorRef.detectChanges();
@@ -767,6 +772,15 @@ export class ModalFactory implements IModal<ModalFactory> {
 			configurable: false
 		});
 
+		Object.defineProperty(childComponent, 'setTitle', {
+			value: (title: string) => {
+				this.title(title);
+			},
+			enumerable: false,
+			writable: false,
+			configurable: false
+		});
+
 		Object.defineProperty(childComponent, 'isModal', {
 			value: true,
 			enumerable: false,
@@ -781,9 +795,8 @@ export class ModalFactory implements IModal<ModalFactory> {
 		});
 
 		Object.defineProperty(childComponent, 'title', {
-			value: this.titleValue,
+			get: () => this.titleValue,
 			enumerable: false,
-			writable: false,
 			configurable: false
 		});
 
