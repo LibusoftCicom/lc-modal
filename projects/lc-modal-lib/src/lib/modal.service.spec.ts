@@ -14,10 +14,35 @@ import {
 	tick, waitForAsync
 } from '@angular/core/testing';
 
-import { ModalModule, IModalResult, Modal, ModalEventType } from './modal.module';
+import { ModalModule, IModalResult, Modal, ModalEventType, ModalDimensionUnits, ModalConfiguration } from './modal.module';
+import { ModalComponent } from './modal.component';
+import { ModalHeaderComponent } from './header/modal-header.component';
 import { of } from 'rxjs';
 
 const preCloseSpyFunctions = jasmine.createSpy('preCloseSpyFunctions');
+
+const CONTENT_HEIGHT = 300;
+let lifecycleLog: string[] = [];
+let lastLifecycleChild: LifecycleChildComponent | null = null;
+
+@Component({
+	template: `<div id="lifecycleChild" style="height: 300px">{{ value }}</div>`
+})
+class LifecycleChildComponent implements OnInit, AfterViewInit {
+	public value = 'initial';
+
+	constructor() {
+		lastLifecycleChild = this;
+	}
+
+	public ngOnInit(): void {
+		lifecycleLog.push('child:ngOnInit');
+	}
+
+	public ngAfterViewInit(): void {
+		lifecycleLog.push('child:ngAfterViewInit');
+	}
+}
 
 @Component({
 	template: `
@@ -51,7 +76,7 @@ describe('ModalComponentHost', () => {
 	beforeEach(waitForAsync(() => {
 		TestBed.configureTestingModule({
 			providers: [],
-			imports: [ModalModule],
+			imports: [ModalModule.forRoot()],
 			declarations: [ModalComponentHost, ModalChildComponent]
 		})
 			.compileComponents()
@@ -276,6 +301,112 @@ describe('ModalComponentHost', () => {
 			const findModal = componentAnchorEl.querySelector('modal-component');
 
 			expect(findModal).toBeNull();
+		})
+	);
+});
+
+describe('Modal lifecycle', () => {
+	let anchorEl: HTMLElement;
+	let fixture: ComponentFixture<ModalComponentHost>;
+	let modalService: Modal;
+
+	beforeEach(waitForAsync(() => {
+		lifecycleLog = [];
+		lastLifecycleChild = null;
+
+		TestBed.configureTestingModule({
+			imports: [ModalModule.forRoot()],
+			declarations: [ModalComponentHost, LifecycleChildComponent]
+		})
+			.compileComponents()
+			.then(() => {
+				fixture = TestBed.createComponent(ModalComponentHost);
+				anchorEl = fixture.debugElement.nativeElement;
+				fixture.detectChanges();
+				modalService = fixture.componentInstance.modal;
+			});
+	}));
+
+	afterEach(() => modalService.destroyAll());
+
+	it(
+		'should run header, content, layout and readiness steps in order',
+		fakeAsync(() => {
+			const headerNgOnInit = ModalHeaderComponent.prototype.ngOnInit;
+			spyOn(ModalHeaderComponent.prototype, 'ngOnInit').and.callFake(function (this: ModalHeaderComponent) {
+				lifecycleLog.push('header:ngOnInit');
+				return headerNgOnInit.call(this);
+			});
+			const initializeLayout = ModalComponent.prototype.initializeLayout;
+			spyOn(ModalComponent.prototype, 'initializeLayout').and.callFake(function (this: ModalComponent) {
+				lifecycleLog.push('modal:initializeLayout');
+				return initializeLayout.call(this);
+			});
+
+			modalService.openChange.subscribe(() => lifecycleLog.push('service:openChange'));
+			const modal = modalService.component(LifecycleChildComponent);
+			modal.isReady.subscribe(() => lifecycleLog.push('factory:isReady'));
+			modal.open();
+
+			fixture.detectChanges();
+			tick(150);
+
+			expect(lifecycleLog).toEqual([
+				'header:ngOnInit',
+				'child:ngOnInit',
+				'child:ngAfterViewInit',
+				'modal:initializeLayout',
+				'service:openChange',
+				'factory:isReady'
+			]);
+		})
+	);
+
+	it(
+		'should apply initial sizes only once',
+		fakeAsync(() => {
+			const setInitialMinSizes = spyOn(<any>ModalComponent.prototype, 'setInitialMinSizes').and.callThrough();
+
+			modalService.component(LifecycleChildComponent).open();
+
+			fixture.detectChanges();
+			tick(150);
+			fixture.detectChanges();
+
+			expect(setInitialMinSizes).toHaveBeenCalledTimes(1);
+		})
+	);
+
+	it(
+		'should measure height after content is rendered when maximize is visible',
+		fakeAsync(() => {
+			// The Karma iframe can be shorter than the content, which would switch sizing to 90%.
+			spyOn(ModalConfiguration.prototype, 'getBoundbox').and.returnValue({ height: 2000, width: 2000 });
+			const modal = modalService.component(LifecycleChildComponent).showMaximize(true);
+			modal.open();
+
+			fixture.detectChanges();
+			tick(150);
+
+			expect(modal.getHeight().units).toBe(ModalDimensionUnits.PIXEL);
+			expect(modal.getHeight().value).toBeGreaterThanOrEqual(CONTENT_HEIGHT);
+			expect(modal.getMinHeight().value).toBeGreaterThanOrEqual(CONTENT_HEIGHT);
+		})
+	);
+
+	it(
+		'should refresh content through factory detectChanges once ready',
+		fakeAsync(() => {
+			const modal = modalService.component(LifecycleChildComponent);
+			modal.open();
+
+			fixture.detectChanges();
+			tick(150);
+
+			lastLifecycleChild.value = 'changed';
+			modal.detectChanges();
+
+			expect(anchorEl.querySelector('#lifecycleChild').textContent.trim()).toBe('changed');
 		})
 	);
 });

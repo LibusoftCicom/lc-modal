@@ -666,24 +666,6 @@ export class ModalFactory implements IModal<ModalFactory> {
 		// add child component to our wrapper component instance
 		this.prepareChildComponent(hostComponentInstance);
 
-		// extend modal view ready function
-		// so we can notify modal service about his readiness
-		const ngAfterViewInit = (<any>hostComponentInstance).ngAfterViewInit;
-		(<any>hostComponentInstance).ngAfterViewInit = () => {
-			ngAfterViewInit.call(hostComponentInstance);
-			if (this._afterViewInit) {
-				this._afterViewInit();
-			}
-			this.componentReady = true;
-			this.viewReadyChange.next();
-
-			// calculate position according to previous modal
-			// but don't do that for messagebox
-			if (this.isCalcRequired()) {
-				this.calcInitPosition();
-			}
-		};
-
 		// toggle status
 		this.configuration
 			.valueChanges
@@ -704,12 +686,17 @@ export class ModalFactory implements IModal<ModalFactory> {
 		changeDetectorRef.detectChanges();
 		hostComponentInstance.initializeLayout();
 
-		/**
-		 * calculate initial position
-		 */
+		// calculate position according to previous modal, but not for messagebox
 		if (this.isCalcRequired()) {
 			this.calcInitPosition();
 		}
+
+		// Angular invokes lifecycle hooks from the prototype, so readiness is signalled here instead of via ngAfterViewInit.
+		if (this._afterViewInit) {
+			this._afterViewInit();
+		}
+		this.componentReady = true;
+		this.viewReadyChange.next();
 
 		// hostComponentInstance.autoFocus();
 	}
