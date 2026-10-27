@@ -77,6 +77,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 
 	private modalConfiguration: ModalConfiguration;
 
+	private layoutInitialized = false;
+
 	constructor(
 		vcRef: ViewContainerRef,
 		private readonly cdr: ChangeDetectorRef,
@@ -96,6 +98,20 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	}
 
 	public ngAfterViewInit(): void {
+		// The factory renders the host before content is added; measuring now would yield an empty modal.
+		if (this.contentRef().length > 0) {
+			this.initializeLayout();
+		}
+	}
+
+	/**
+	 * Applies the initial position and sizes. Must run after the content component has been rendered.
+	 */
+	public initializeLayout(): void {
+		if (this.layoutInitialized) {
+			return;
+		}
+		this.layoutInitialized = true;
 		this.setInitialPosition();
 		this.setInitialMinSizes();
 	}

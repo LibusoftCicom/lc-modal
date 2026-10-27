@@ -702,6 +702,7 @@ export class ModalFactory implements IModal<ModalFactory> {
 		ACTIVE_MODAL.set(this);
 
 		changeDetectorRef.detectChanges();
+		hostComponentInstance.initializeLayout();
 
 		/**
 		 * calculate initial position
