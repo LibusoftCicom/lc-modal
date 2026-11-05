@@ -29,6 +29,7 @@ export {
 	ModalConfigurationEventType,
 	IModalConfigurationEvent,
 	ModalDimensionUnits,
+    ModalOpeningPositionStrategy,
 	ModalConfiguration
 } from './modal-configuration.class';
 export { INPUT_BINDER } from './modal-binding.class';

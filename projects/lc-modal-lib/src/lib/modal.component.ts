@@ -112,8 +112,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 			return;
 		}
 		this.layoutInitialized = true;
-		this.setInitialPosition();
 		this.setInitialMinSizes();
+		this.setInitialPosition();
 	}
 
 	public ngOnDestroy(): void {
@@ -182,8 +182,8 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	 */
 	private setInitialMinSizes(): void {
 		if (!this.modalConfiguration.getMinWidth()) {
-			const width = this.modalConfiguration.getWidth()?.value || this.getWidth();
-			this.modalConfiguration.setMinWidth({ value: width, units: ModalDimensionUnits.PIXEL });
+			this.modalConfiguration.setMinWidth(this.modalConfiguration.getWidth()
+				|| { value: this.getWidth(), units: ModalDimensionUnits.PIXEL });
 		}
 
 		/**
@@ -273,7 +273,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 			}
 		} else {
 			// move it to the center
-			this.modalConfiguration.setToCenter();
+			this.modalConfiguration.setToCenter({ height: this.getHeight(), width: this.getWidth() });
 		}
 	}
 
@@ -284,18 +284,15 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 		this.eventDestroyHooks.push(
 			this.renderer.listen('window', 'resize', () => {
 				const configuration = this.modalConfiguration;
-
-				/**
-				 * consider only if draggable is used,
-				 * because otherwise css properties are
-				 * used to fix element into the center of page
-				 *
-				 * recalculate new position and
-				 * return all modals inside bound box
-				 */
-				if (configuration.isDraggable()) {
-					configuration.setLeftPosition(this.getPositionLeft());
-					configuration.setTopPosition(this.getPositionTop());
+				if (configuration.isMaximized() || configuration.isCollapsed()) {
+					return;
+				}
+				const dimensions = { height: this.getHeight(), width: this.getWidth() };
+				if (configuration.isPositionToScreenCenterEnabled()) {
+					configuration.setToCenter(dimensions);
+				} else if (configuration.isDraggable()) {
+					configuration.setLeftPosition(this.getPositionLeft(), ModalDimensionUnits.PIXEL, dimensions);
+					configuration.setTopPosition(this.getPositionTop(), ModalDimensionUnits.PIXEL, dimensions);
 				}
 			})
 		);
@@ -545,7 +542,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	public getPositionLeft(): number {
 		const position = this.modalConfiguration.getLeftPosition();
 		if (position != null) {
-			return position?.value;
+			return this.modalConfiguration.toPixels(position, this.modalConfiguration.getBoundbox().width);
 		}
 
 		return this.getClientRects().left;
@@ -557,7 +554,7 @@ export class ModalComponent implements OnInit, AfterViewInit, AfterContentInit, 
 	public getPositionTop(): number {
 		const position = this.modalConfiguration.getTopPosition();
 		if (position != null) {
-			return position?.value;
+			return this.modalConfiguration.toPixels(position, this.modalConfiguration.getBoundbox().height);
 		}
 
 		return this.getClientRects().top;

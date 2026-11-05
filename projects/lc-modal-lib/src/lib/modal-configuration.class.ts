@@ -59,6 +59,12 @@ export interface IModalDimension {
 
 export const DEFAULT_Z_INDEX = 10000;
 
+export enum ModalOpeningPositionStrategy {
+	CASCADE = 'cascade',
+	SCREEN_CENTER = 'screen-center',
+	PARENT_CENTER = 'parent-center'
+}
+
 export class ModalConfiguration {
 
 	/**
@@ -74,6 +80,10 @@ export class ModalConfiguration {
 	private displayOverlay = true;
 
 	private positionToScreenCenter = false;
+
+	private positionToScreenCenterBeforeFullscreen = false;
+
+	private openingPositionStrategy = ModalOpeningPositionStrategy.CASCADE;
 
 	private visible = true;
 
@@ -190,6 +200,15 @@ export class ModalConfiguration {
 		this.positionToScreenCenter = center;
 	}
 
+	public getOpeningPositionStrategy(): ModalOpeningPositionStrategy {
+		return this.openingPositionStrategy;
+	}
+
+	public setOpeningPositionStrategy(strategy: ModalOpeningPositionStrategy): void {
+		this.openingPositionStrategy = strategy;
+		this.positionToScreenCenter = false;
+	}
+
 	public isVisible(): boolean {
 		return this.visible;
 	}
@@ -243,10 +262,14 @@ export class ModalConfiguration {
 	}
 
 	public setMaximized(isFullScreen: boolean = true): void {
+		if (isFullScreen && !this.fullscreen) {
+			this.positionToScreenCenterBeforeFullscreen = this.positionToScreenCenter;
+		} else if (!isFullScreen && this.fullscreen) {
+			this.positionToScreenCenter = this.positionToScreenCenterBeforeFullscreen;
+		}
 		this.fullscreen = isFullScreen;
 
 		isFullScreen ? this.addClass(ModalClassNames.FULLSCREEN) : this.removeClass(ModalClassNames.FULLSCREEN);
-		this.valueChanged.next({ type: ModalConfigurationEventType.FULLSCREEN_CHANGE, value: isFullScreen });
 
 		if (isFullScreen) {
 			this.setDraggable(false, false);
@@ -275,6 +298,7 @@ export class ModalConfiguration {
 		if (!this.isDraggable()) {
 			this.setPositionToScreenCenter(true);
 		}
+		this.valueChanged.next({ type: ModalConfigurationEventType.FULLSCREEN_CHANGE, value: isFullScreen });
 	}
 
 	public toggleMaximize(): void {
@@ -520,8 +544,9 @@ export class ModalConfiguration {
 		return this.leftPosition;
 	}
 
-	public setLeftPosition(left: number, units: string = ModalDimensionUnits.PIXEL): void {
-		this.leftPosition = this.checkBoundBox('left', left, units);
+	public setLeftPosition(left: number, units: string = ModalDimensionUnits.PIXEL,
+		dimensions = this.getDimensionsInPixels()): void {
+		this.leftPosition = this.checkBoundBox('left', left, units, dimensions);
 		this.emitPositionChanged();
 	}
 
@@ -529,8 +554,9 @@ export class ModalConfiguration {
 		return this.topPosition;
 	}
 
-	public setTopPosition(top: number, units: string = ModalDimensionUnits.PIXEL): void {
-		this.topPosition = this.checkBoundBox('top', top, units);
+	public setTopPosition(top: number, units: string = ModalDimensionUnits.PIXEL,
+		dimensions = this.getDimensionsInPixels()): void {
+		this.topPosition = this.checkBoundBox('top', top, units, dimensions);
 		this.emitPositionChanged();
 	}
 
@@ -540,21 +566,31 @@ export class ModalConfiguration {
 		this.emitPositionChanged();
 	}
 
-	public setToCenter(): void {
+	public toPixels(dimension: IModalDimension, extent: number): number {
+		return dimension?.units === ModalDimensionUnits.PERCENTAGE
+			? extent * dimension.value / 100 : dimension?.value;
+	}
+
+	public getDimensionsInPixels(): { height: number; width: number } {
 		const boundbox = this.getBoundbox();
-		const boundboxHeight = boundbox.height;
-		const boundboxWidth = boundbox.width;
+		return {
+			height: this.toPixels(this.getHeight() || this.getMaxHeight() || this.getMinHeight(), boundbox.height),
+			width: this.toPixels(this.getWidth() || this.getMaxWidth() || this.getMinWidth(), boundbox.width)
+		};
+	}
 
-		const elHeight = (this.getHeight() || this.getMaxHeight() || this.getMinHeight())?.value;
-		const elWidth = (this.getWidth() || this.getMaxWidth() || this.getMinWidth())?.value;
+	public getCenteredPosition(dimensions = this.getDimensionsInPixels()): { top: number; left: number } {
+		const boundbox = this.getBoundbox();
+		return {
+			top: Math.max(0, (boundbox.height - dimensions.height) / 2),
+			left: Math.max(0, (boundbox.width - dimensions.width) / 2)
+		};
+	}
 
-		if (elHeight && elWidth) {
-			const top = (boundboxHeight / 2) - (elHeight / 2);
-			const left = (boundboxWidth / 2) - (elWidth / 2);
-
-			this.leftPosition = this.checkBoundBox('left', left, ModalDimensionUnits.PIXEL);
-			this.topPosition = this.checkBoundBox('top', top, ModalDimensionUnits.PIXEL);
-			this.emitPositionChanged();
+	public setToCenter(dimensions = this.getDimensionsInPixels()): void {
+		if (dimensions.height != null && dimensions.width != null) {
+			const position = this.getCenteredPosition(dimensions);
+			this.setPosition(position.top, position.left);
 		}
 	}
 
@@ -586,26 +622,28 @@ export class ModalConfiguration {
 	 * max width is mobile size cca 760
 	 * then move all modals to center
 	 *
-	 * TODO -> calculate depending on units size
 	 */
 	private checkBoundBox(dir: 'left' | 'top',
 		position: number,
-		units: string = ModalDimensionUnits.PIXEL): IModalDimension | null {
+		units: string = ModalDimensionUnits.PIXEL,
+		dimensions = this.getDimensionsInPixels()): IModalDimension | null {
 		if (position == null) {
 			return null;
 		}
+		const bounds = this.getBoundbox();
+		position = this.toPixels({ value: position, units }, dir === 'left' ? bounds.width : bounds.height);
+		units = ModalDimensionUnits.PIXEL;
 
 		if (dir === 'left') {
-			const boundboxWidth = this.getBoundbox().width;
-			const elWidthObject = this.getWidth() || this.getMaxWidth() || this.getMinWidth();
-			const elWidth = elWidthObject?.value;
+			const boundboxWidth = bounds.width;
+			const elWidth = dimensions.width;
 
 			/**
 			 * on mobile and when isPositionToScreenCenterEnabled() is true
 			 * move element to center
 			 */
 			if (boundboxWidth < 760 && !this.desktopBehaviorPreserved && elWidth) {
-				return { value: (boundboxWidth / 2) - (elWidth / 2), units: units };
+				return { value: Math.max(0, (boundboxWidth - elWidth) / 2), units };
 			}
 
 			/**
@@ -624,9 +662,9 @@ export class ModalConfiguration {
 
 			return { value: position, units };
 		} else {
-			const boundbox = this.getBoundbox();
+			const boundbox = bounds;
 			const boundboxHeight = boundbox.height;
-			const elHeight = (this.getHeight() || this.getMaxHeight() || this.getMinHeight())?.value;
+			const elHeight = dimensions.height;
 
 			/**
 			 * on mobile devices move element to center, but do not go under 0px

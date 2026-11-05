@@ -17,7 +17,8 @@ import { filter, switchMap, tap } from 'rxjs/operators';
 import {
 	IModalDimension,
 	ModalConfiguration,
-	ModalConfigurationEventType
+	ModalConfigurationEventType,
+	ModalOpeningPositionStrategy
 } from './modal-configuration.class';
 
 import { INPUT_BINDER } from './modal-binding.class';
@@ -357,6 +358,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 		return this;
 	}
 
+	public setOpeningPositionStrategy(strategy: ModalOpeningPositionStrategy): this {
+		this.configuration.setOpeningPositionStrategy(strategy);
+		return this;
+	}
+
 	/**
 	 * @internaly
 	 */
@@ -684,10 +690,11 @@ export class ModalFactory implements IModal<ModalFactory> {
 		ACTIVE_MODAL.set(this);
 
 		changeDetectorRef.detectChanges();
+		const calcRequired = this.isCalcRequired();
 		hostComponentInstance.initializeLayout();
 
 		// calculate position according to previous modal, but not for messagebox
-		if (this.isCalcRequired()) {
+		if (calcRequired) {
 			this.calcInitPosition();
 		}
 
@@ -849,50 +856,39 @@ export class ModalFactory implements IModal<ModalFactory> {
 
 	/**
 	 * calculate position for new modal
-	 * it' can't be positioned over previous one, we need to move it right-bottom, right-top, left-bottom or left-top
-	 * but look out on bound box
+	 * Cascade right-bottom, restarting both coordinates when the next step cannot fit.
 	 */
 	private calcInitPosition() {
-		let left = null;
-		let top = null;
-
 		const move = 30;
-
 		const wrapperInstance = this.hostComponentRef;
-
 		const boundbox = this.configuration.getBoundbox();
 		const height = wrapperInstance.getHeight();
 		const width = wrapperInstance.getWidth();
+		const maxLeft = Math.max(0, boundbox.width - width);
+		const maxTop = Math.max(0, boundbox.height - height);
+		let { left, top } = this.configuration.getCenteredPosition({ height, width });
+		const previous = this.findVisiblePrevious(this);
+		const strategy = this.configuration.getOpeningPositionStrategy();
+		const parentModal = this.parent && this.parent.isVisible() ? this.parent : previous;
 
-		if (this.previous) {
-			const previousWrapperInstance = this.previous.hostComponentRef;
-
-			const previousLeft = previousWrapperInstance.getPositionLeft();
-			const previousTop = previousWrapperInstance.getPositionTop();
-
-			// if we can move it to right
-			if (previousLeft + width + move < boundbox.width) {
-				left = previousLeft + move;
+		if (parentModal && strategy === ModalOpeningPositionStrategy.PARENT_CENTER
+				&& !parentModal.configuration.isMaximized()) {
+			const parent = parentModal.hostComponentRef;
+			left = Math.max(0, Math.min(maxLeft, parent.getPositionLeft() + (parent.getWidth() - width) / 2));
+			top = Math.max(0, Math.min(maxTop, parent.getPositionTop() + (parent.getHeight() - height) / 2));
+		} else if (previous && strategy === ModalOpeningPositionStrategy.CASCADE && !previous.configuration.isMaximized()) {
+			const previousWrapperInstance = previous.hostComponentRef;
+			const nextLeft = previousWrapperInstance.getPositionLeft() + move;
+			const nextTop = previousWrapperInstance.getPositionTop() + move;
+			if (nextLeft >= 0 && nextLeft <= maxLeft && nextTop >= 0 && nextTop <= maxTop) {
+				left = nextLeft;
+				top = nextTop;
 			} else {
-				// else move it to the right
-				left = move;
+				left = Math.min(move, maxLeft);
+				top = Math.min(move, maxTop);
 			}
-
-			// if we can move it down
-			if (previousTop + height + move < boundbox.height) {
-				top = previousTop + move;
-			} else {
-				// move it to down
-				top = move;
-			}
-		} else {
-			top = boundbox.height / 2 - height / 2;
-			left = boundbox.width / 2 - width / 2;
 		}
 
-		top = top < 0 ? 0 : top;
-
-		// set new position
 		this.configuration.setPosition(top, left);
 	}
 
